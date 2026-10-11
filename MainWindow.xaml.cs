@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow : Window
 {
@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         Text,
         Pencil,
         Brush,
+        Pen,
         Pan,
         Zoom
     }
@@ -36,12 +37,24 @@ public partial class MainWindow : Window
     private bool _isDrawing = false;
     private bool _isDragging = false;
     private bool _isPanning = false;
-    private Vector _dragOffset;
     private Point _panStartPoint;
+    private Point _dragStart;
+    private readonly Dictionary<FrameworkElement, Point> _dragOrigins = new();
+    private readonly List<FrameworkElement> _selection = new();
+    private TextBox? _editingTextBox;
+    private bool _isSelecting = false;
+    private Point _selectStart;
+    private Rectangle? _selectMarqueeRect;
     private bool _isZoomDragging = false;
     private Point _zoomStartPoint;
     private Rectangle? _marqueeRect;
     private double _zoom = 1.0;
+    private readonly List<PenNode> _penNodes = new();
+    private System.Windows.Shapes.Path? _penPath;
+    private bool _penBuilding = false;
+    private bool _penDraggingHandle = false;
+    private bool _penClosed = false;
+    private int _penActiveIndex = -1;
     private readonly ObservableCollection<LayerInfo> _layers = new();
     private int _objectCounter = 0;
     private Color _strokeColor = Colors.Black;
@@ -52,6 +65,21 @@ public partial class MainWindow : Window
     private enum ResizeHandle
     {
         TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left, Rotate
+    }
+
+    private sealed class PenNode
+    {
+        public Point P;
+        public Vector In;
+        public Vector Out;
+    }
+
+    private sealed class PenData
+    {
+        public List<PenNode> Nodes = new();
+        public double BaseW = 1;
+        public double BaseH = 1;
+        public bool Closed;
     }
 
     private const double HandleSize = 9.0;

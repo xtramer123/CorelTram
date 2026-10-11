@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -54,7 +55,7 @@ public partial class MainWindow
 
     private void ApplyStrokePreset(DoubleCollection? dash, double width, PenLineCap cap)
     {
-        if (CurrentShapeForStyle() is Shape shape)
+        foreach (var shape in ShapesToStyle())
         {
             shape.StrokeThickness = width;
             shape.StrokeDashArray = dash;
@@ -63,11 +64,12 @@ public partial class MainWindow
         }
     }
 
-    private Shape? CurrentShapeForStyle()
+    private IEnumerable<Shape> ShapesToStyle()
     {
-        if (_selectedElement is Shape selected) return selected;
-        if (_currentShape is Shape current) return current;
-        return null;
+        bool any = false;
+        foreach (var fe in _selection)
+            if (fe is Shape s) { any = true; yield return s; }
+        if (!any && _currentShape is Shape current) yield return current;
     }
 
     private DoubleCollection? GetDashArray()
@@ -119,16 +121,16 @@ public partial class MainWindow
     private void LineStyle_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
-        if (CurrentShapeForStyle() is Shape shape)
+        foreach (var shape in ShapesToStyle())
             shape.StrokeDashArray = GetDashArray();
     }
 
     private void LineCap_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
-        if (CurrentShapeForStyle() is Shape shape)
+        var cap = GetCap();
+        foreach (var shape in ShapesToStyle())
         {
-            var cap = GetCap();
             shape.StrokeStartLineCap = cap;
             shape.StrokeEndLineCap = cap;
         }
@@ -137,7 +139,7 @@ public partial class MainWindow
     private void LineJoin_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;
-        if (CurrentShapeForStyle() is Shape shape)
+        foreach (var shape in ShapesToStyle())
             shape.StrokeLineJoin = GetJoin();
     }
 
@@ -146,7 +148,7 @@ public partial class MainWindow
         if (!IsLoaded) return;
         if (StrokeThicknessCombo?.SelectedItem is not ComboBoxItem item) return;
         if (!double.TryParse(item.Content.ToString()!.Replace(" pt", ""), out var thickness)) return;
-        if (CurrentShapeForStyle() is Shape shape)
+        foreach (var shape in ShapesToStyle())
             shape.StrokeThickness = thickness;
     }
 }

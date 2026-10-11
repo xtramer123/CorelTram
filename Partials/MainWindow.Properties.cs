@@ -1,8 +1,9 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -89,7 +90,12 @@ public partial class MainWindow
         if (!IsLoaded) return;
         if (!_isUpdatingUI && _selectedElement is FrameworkElement fe && double.TryParse(SizeWText.Text, out var w))
         {
-            fe.Width = w;
+            if (fe is Path path && path.Tag is PenData)
+            {
+                var b = GetElementBounds(fe);
+                ApplyBounds(fe, new Rect(b.Left, b.Top, w, b.Height));
+            }
+            else fe.Width = w;
             UpdateSelectionChrome();
         }
     }
@@ -99,7 +105,12 @@ public partial class MainWindow
         if (!IsLoaded) return;
         if (!_isUpdatingUI && _selectedElement is FrameworkElement fe && double.TryParse(SizeHText.Text, out var h))
         {
-            fe.Height = h;
+            if (fe is Path path && path.Tag is PenData)
+            {
+                var b = GetElementBounds(fe);
+                ApplyBounds(fe, new Rect(b.Left, b.Top, b.Width, h));
+            }
+            else fe.Height = h;
             UpdateSelectionChrome();
         }
     }

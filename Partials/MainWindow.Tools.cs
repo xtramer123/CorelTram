@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -23,7 +23,16 @@ public partial class MainWindow
         }
         _isUpdatingUI = false;
 
-        _currentTool = Enum.Parse<ToolMode>(btn.Tag.ToString()!);
+        var newTool = Enum.Parse<ToolMode>(btn.Tag.ToString()!);
+        if (_penBuilding && newTool != ToolMode.Pen)
+            FinishPenPath();
+
+        _currentTool = newTool;
+        if (_currentTool != ToolMode.Select)
+        {
+            if (_editingTextBox != null) ExitTextEdit();
+            ClearSelection();
+        }
         UpdateToolStatus();
         UpdateCursor();
         UpdateSelectionChrome();
@@ -35,6 +44,7 @@ public partial class MainWindow
         if (_isUpdatingUI) return;
         if (sender is ToggleButton btn && btn.Tag?.ToString() == _currentTool.ToString())
         {
+            if (_penBuilding) FinishPenPath();
             _isUpdatingUI = true;
             SelectToolBtn.IsChecked = true;
             _isUpdatingUI = false;
@@ -65,6 +75,9 @@ public partial class MainWindow
     private void PanTool_Click(object sender, RoutedEventArgs e)
     {
         _currentTool = ToolMode.Pan;
+        if (_penBuilding) FinishPenPath();
+        if (_editingTextBox != null) ExitTextEdit();
+        ClearSelection();
         UpdateToolStatus();
         UpdateCursor();
         // Uncheck all tool buttons
@@ -78,6 +91,9 @@ public partial class MainWindow
     private void ZoomTool_Click(object sender, RoutedEventArgs e)
     {
         _currentTool = ToolMode.Zoom;
+        if (_penBuilding) FinishPenPath();
+        if (_editingTextBox != null) ExitTextEdit();
+        ClearSelection();
         UpdateToolStatus();
         UpdateCursor();
         foreach (var child in FindVisualChildren<ToggleButton>(this))
@@ -89,6 +105,21 @@ public partial class MainWindow
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
+        if (e.Key == Key.Escape && _editingTextBox != null)
+        {
+            ExitTextEdit();
+            DrawingCanvas.Focus();
+            e.Handled = true;
+            return;
+        }
+
+        if (_penBuilding && (e.Key == Key.Escape || e.Key == Key.Enter))
+        {
+            FinishPenPath();
+            e.Handled = true;
+            return;
+        }
+
         if (Keyboard.FocusedElement is TextBox) return;
         if (Keyboard.Modifiers != ModifierKeys.None) return;
 
@@ -100,6 +131,7 @@ public partial class MainWindow
             Key.L => LineToolBtn,
             Key.T => TextToolBtn,
             Key.P => PencilToolBtn,
+            Key.N => PenToolBtn,
             Key.B => BrushToolBtn,
             _ => null
         };

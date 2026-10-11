@@ -2,13 +2,48 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
     // ========== TEXT TOOLS ==========
+    private void TextBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        if (_currentTool != ToolMode.Select) return;
+        if (_editingTextBox == tb) return;
+
+        if (e.ClickCount >= 2)
+        {
+            EnterTextEdit(tb);
+            e.Handled = true;
+            return;
+        }
+
+        SelectOnly(tb);
+        BeginDrag(e.GetPosition(DrawingCanvas));
+        DrawingCanvas.CaptureMouse();
+        e.Handled = true;
+    }
+
+    private void TextBox_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is TextBox tb && _currentTool == ToolMode.Select)
+        {
+            EnterTextEdit(tb);
+            e.Handled = true;
+        }
+    }
+
+    private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox tb && IsSelected(tb))
+            UpdateSelectionChrome();
+    }
+
     private void InitializeFontFamilies()
     {
         foreach (var family in Fonts.SystemFontFamilies.OrderBy(f => f.Source))

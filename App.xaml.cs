@@ -1,6 +1,6 @@
-﻿using System.Windows;
+using System.Windows;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class App : Application
 {

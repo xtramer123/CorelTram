@@ -6,7 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -113,9 +113,13 @@ public partial class MainWindow
         _strokeColor = color;
         var brush = color == Colors.Transparent ? null : (Brush)new SolidColorBrush(color);
 
-        if (_selectedElement is Shape shape) shape.Stroke = brush;
-        else if (_selectedElement is TextBox tb) tb.Foreground = brush ?? Brushes.Black;
-        else if (_currentShape is Shape cs) cs.Stroke = brush;
+        bool applied = false;
+        foreach (var fe in _selection)
+        {
+            if (fe is Shape shape) { shape.Stroke = brush; applied = true; }
+            else if (fe is TextBox tb) { tb.Foreground = brush ?? Brushes.Black; applied = true; }
+        }
+        if (!applied && _currentShape is Shape cs) cs.Stroke = brush;
 
         UpdateColorIndicators();
     }
@@ -123,10 +127,14 @@ public partial class MainWindow
     private void SetFillColor(Color color)
     {
         _fillColor = color;
-        var brush = color == Colors.Transparent ? null : (Brush)new SolidColorBrush(color);
+        var brush = color == Colors.Transparent ? Brushes.Transparent : (Brush)new SolidColorBrush(color);
 
-        if (_selectedElement is Shape shape) shape.Fill = brush;
-        else if (_currentShape is Shape cs) cs.Fill = brush;
+        bool applied = false;
+        foreach (var fe in _selection)
+        {
+            if (fe is Shape shape) { shape.Fill = brush; applied = true; }
+        }
+        if (!applied && _currentShape is Shape cs) cs.Fill = brush;
 
         UpdateColorIndicators();
     }

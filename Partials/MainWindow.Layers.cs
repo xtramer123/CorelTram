@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {

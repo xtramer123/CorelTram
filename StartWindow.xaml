@@ -1,11 +1,11 @@
-<Window x:Class="CorelTram.StartWindow"
+<Window x:Class="VectorTram.StartWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CorelTram"
+        xmlns:local="clr-namespace:VectorTram"
         mc:Ignorable="d"
-        Title="CorelTram - Bienvenido" Height="650" Width="1000"
+        Title="VectorTram - Bienvenido" Height="650" Width="1000"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5"
         Foreground="#1E1E1E"
@@ -158,7 +158,7 @@
                 <!-- Logo & Brand -->
                 <StackPanel Orientation="Horizontal" Margin="32,40,32,0" VerticalAlignment="Center">
                     <Image Source="logotipo.png" Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    <TextBlock Text="CorelTram" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock Text="VectorTram" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="Editor de Gráficos Vectoriales" FontSize="12" Foreground="{StaticResource TextMuted}" Margin="32,4,32,0"/>
 
@@ -240,7 +240,7 @@
                 <ScrollViewer x:Name="WelcomeScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Grid.Row="0">
                     <StackPanel x:Name="WelcomeView" VerticalAlignment="Center" HorizontalAlignment="Center" Width="480" Margin="0,40">
                         <Image Source="logotipo.png" Width="96" Height="96" Margin="0,0,0,24" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        <TextBlock Text="Bienvenido a CorelTram" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" TextAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="Bienvenido a VectorTram" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" TextAlignment="Center" Margin="0,0,0,8"/>
                         <TextBlock Text="Tu editor de gráficos vectoriales moderno y ligero" FontSize="15" Foreground="{StaticResource TextSecondary}" TextAlignment="Center" Margin="0,0,0,40" TextWrapping="Wrap"/>
 
                         <Border Background="{StaticResource BgPrimary}" CornerRadius="12" Padding="24" Effect="{StaticResource CardShadow}" BorderBrush="{StaticResource BorderDefault}" BorderThickness="1">

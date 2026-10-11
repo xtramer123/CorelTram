@@ -9,7 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -97,8 +97,10 @@ public partial class MainWindow
 
     private void SetSelectionChromeVisibility(Visibility visibility)
     {
-        if (SelectionLayer != null)
-            SelectionLayer.Visibility = visibility;
+        if (_selectionRect != null) _selectionRect.Visibility = visibility;
+        foreach (var thumb in _resizeThumbs)
+            if (thumb != null) thumb.Visibility = visibility;
+        if (_rotateThumb != null) _rotateThumb.Visibility = visibility;
     }
 
     private Rect GetElementBounds(FrameworkElement fe)
@@ -136,14 +138,20 @@ public partial class MainWindow
     {
         if (SelectionLayer == null) return;
 
-        if (_selectedElement is not FrameworkElement fe || _currentTool != ToolMode.Select)
+        if (_selection.Count == 0 || _currentTool != ToolMode.Select)
         {
             SetSelectionChromeVisibility(Visibility.Collapsed);
             return;
         }
 
-        var b = GetElementBounds(fe);
-        if (b.Width <= 0 || b.Height <= 0)
+        Rect b = Rect.Empty;
+        foreach (var fe in _selection)
+        {
+            var eb = GetElementBounds(fe);
+            if (eb.Width <= 0 || eb.Height <= 0) continue;
+            b = b.IsEmpty ? eb : Rect.Union(b, eb);
+        }
+        if (b.IsEmpty)
         {
             SetSelectionChromeVisibility(Visibility.Collapsed);
             return;
@@ -159,6 +167,14 @@ public partial class MainWindow
         Canvas.SetTop(_selectionRect, b.Top);
         _selectionRect.Width = b.Width;
         _selectionRect.Height = b.Height;
+
+        bool single = _selection.Count == 1;
+        foreach (var thumb in _resizeThumbs)
+            if (thumb != null) thumb.Visibility = single ? Visibility.Visible : Visibility.Collapsed;
+        if (_rotateThumb != null)
+            _rotateThumb.Visibility = single ? Visibility.Visible : Visibility.Collapsed;
+
+        if (!single) return;
 
         double cx = b.Left + b.Width / 2;
         double cy = b.Top + b.Height / 2;
@@ -193,9 +209,11 @@ public partial class MainWindow
         Canvas.SetTop(thumb, centerY - half);
     }
 
+    private FrameworkElement? SingleSelection => _selection.Count == 1 ? _selection[0] : null;
+
     private void ResizeThumb_DragStarted(object sender, DragStartedEventArgs e)
     {
-        if (_selectedElement is not FrameworkElement fe) return;
+        if (SingleSelection is not FrameworkElement fe) return;
         if (sender is Thumb t && t.Tag is ResizeHandle handle) _activeHandle = handle;
         _resizeBounds = GetElementBounds(fe);
         _lastMousePos = Mouse.GetPosition(DrawingCanvas);
@@ -227,7 +245,7 @@ public partial class MainWindow
 
     private void ResizeThumb_DragDelta(object sender, DragDeltaEventArgs e)
     {
-        if (_selectedElement is not FrameworkElement fe) return;
+        if (SingleSelection is not FrameworkElement fe) return;
 
         if (_activeHandle == ResizeHandle.Rotate)
         {
@@ -296,6 +314,22 @@ public partial class MainWindow
                 poly.Points[i] = new Point(f.X * b.Width, f.Y * b.Height);
             }
         }
+        else if (fe is Path path && path.Tag is PenData pd && pd.Nodes.Count > 0)
+        {
+            Canvas.SetLeft(path, b.Left);
+            Canvas.SetTop(path, b.Top);
+            double sx = pd.BaseW > 0.01 ? b.Width / pd.BaseW : 1;
+            double sy = pd.BaseH > 0.01 ? b.Height / pd.BaseH : 1;
+            var scaled = new List<PenNode>(pd.Nodes.Count);
+            foreach (var n in pd.Nodes)
+                scaled.Add(new PenNode
+                {
+                    P = new Point(n.P.X * sx, n.P.Y * sy),
+                    In = new Vector(n.In.X * sx, n.In.Y * sy),
+                    Out = new Vector(n.Out.X * sx, n.Out.Y * sy)
+                });
+            path.Data = BuildGeometry(scaled, pd.Closed);
+        }
         else
         {
             Canvas.SetLeft(fe, b.Left);
@@ -326,50 +360,137 @@ public partial class MainWindow
     }
 
     // ========== SELECTION ==========
-    private void SelectElement(FrameworkElement element)
-    {
-        DeselectElement();
-        _selectedElement = element;
+    private bool IsSelected(FrameworkElement fe) => _selection.Contains(fe);
 
-        if (element is Shape shape)
+    private void SelectOnly(FrameworkElement fe)
+    {
+        ClearSelection();
+        AddToSelection(fe);
+        SyncColorsFromSelection(fe);
+        StatusText.Text = $"Seleccionado: {fe.Name ?? "Objeto"}";
+    }
+
+    private void AddToSelection(FrameworkElement fe)
+    {
+        if (_selection.Contains(fe)) return;
+        _selection.Add(fe);
+        _selectedElement = fe;
+        ApplySelectionVisual(fe);
+        UpdatePropertiesPanel();
+        UpdateSelectionChrome();
+    }
+
+    private void ToggleSelection(FrameworkElement fe)
+    {
+        if (_selection.Contains(fe)) RemoveFromSelection(fe);
+        else AddToSelection(fe);
+    }
+
+    private void RemoveFromSelection(FrameworkElement fe)
+    {
+        if (!_selection.Remove(fe)) return;
+        RemoveSelectionVisual(fe);
+        _selectedElement = _selection.Count > 0 ? _selection[_selection.Count - 1] : null;
+        UpdatePropertiesPanel();
+        UpdateSelectionChrome();
+    }
+
+    private void ClearSelection()
+    {
+        foreach (var fe in _selection)
+            RemoveSelectionVisual(fe);
+        _selection.Clear();
+        _selectedElement = null;
+        UpdatePropertiesPanel();
+        SetSelectionChromeVisibility(Visibility.Collapsed);
+    }
+
+    private void ApplySelectionVisual(FrameworkElement fe)
+    {
+        if (fe is Shape shape)
         {
             shape.Effect = (DropShadowEffect)FindResource("ShadowSmall");
-            SyncColorsFromSelection(shape);
         }
-        else if (element is TextBox tb)
+        else if (fe is TextBox tb)
         {
             tb.BorderThickness = new Thickness(1);
             tb.BorderBrush = (Brush)FindResource("AccentBrush");
             tb.Background = (Brush)FindResource("BgTeritary");
-            SyncColorsFromSelection(tb);
         }
-        else if (element is Image img)
+        else if (fe is Image img)
         {
             img.Effect = (DropShadowEffect)FindResource("ShadowSmall");
         }
-
-        UpdatePropertiesPanel();
-        UpdateSelectionChrome();
-        StatusText.Text = $"Seleccionado: {element.Name ?? "Objeto"}";
     }
 
-    private void DeselectElement()
+    private void RemoveSelectionVisual(FrameworkElement fe)
     {
-        if (_selectedElement is Shape shape)
+        if (fe is Shape shape)
         {
             shape.Effect = null;
         }
-        else if (_selectedElement is TextBox tb)
+        else if (fe is TextBox tb)
         {
             tb.BorderThickness = new Thickness(0);
             tb.Background = Brushes.Transparent;
         }
-        else if (_selectedElement is Image img)
+        else if (fe is Image img)
         {
             img.Effect = null;
         }
-        _selectedElement = null;
-        UpdatePropertiesPanel();
-        SetSelectionChromeVisibility(Visibility.Collapsed);
+    }
+
+    private void BeginDrag(Point start)
+    {
+        _isDragging = true;
+        _dragStart = start;
+        _dragOrigins.Clear();
+        foreach (var fe in _selection)
+        {
+            double l = Canvas.GetLeft(fe); if (double.IsNaN(l)) l = 0;
+            double t = Canvas.GetTop(fe); if (double.IsNaN(t)) t = 0;
+            _dragOrigins[fe] = new Point(l, t);
+        }
+    }
+
+    private void SelectInRect(Rect rect)
+    {
+        var hits = new List<FrameworkElement>();
+        foreach (var child in DrawingCanvas.Children)
+        {
+            if (child is not FrameworkElement fe) continue;
+            if (fe == SelectionLayer) continue;
+            var b = GetElementBounds(fe);
+            if (b.Width <= 0 || b.Height <= 0) continue;
+            if (rect.IntersectsWith(b)) hits.Add(fe);
+        }
+        if (hits.Count == 0) return;
+
+        ClearSelection();
+        foreach (var fe in hits) AddToSelection(fe);
+        StatusText.Text = $"{hits.Count} objeto(s) seleccionado(s)";
+    }
+
+    // ========== TEXT EDITING ==========
+    private void EnterTextEdit(TextBox tb)
+    {
+        if (_editingTextBox != null && _editingTextBox != tb) ExitTextEdit();
+        SelectOnly(tb);
+        _editingTextBox = tb;
+        tb.IsReadOnly = false;
+        tb.Focusable = true;
+        tb.Focus();
+        Keyboard.Focus(tb);
+        tb.CaretIndex = tb.Text.Length;
+        DrawingCanvas.Cursor = Cursors.IBeam;
+        StatusText.Text = "Editando texto - Esc o clic fuera para terminar";
+    }
+
+    private void ExitTextEdit()
+    {
+        _editingTextBox = null;
+        UpdateCursor();
+        if (_selectedElement is FrameworkElement fe)
+            StatusText.Text = $"Seleccionado: {fe.Name ?? "Objeto"}";
     }
 }

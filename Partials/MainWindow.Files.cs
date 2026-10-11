@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -22,8 +22,8 @@ public partial class MainWindow
         }
         if (DrawingCanvas != null)
         {
-            DrawingCanvas.Width = widthPx + PasteboardMargin * 2;
-            DrawingCanvas.Height = heightPx + PasteboardMargin * 2;
+            DrawingCanvas.Width = Math.Max(widthPx + PasteboardMargin * 2, 4000);
+            DrawingCanvas.Height = Math.Max(heightPx + PasteboardMargin * 2, 4000);
         }
         CanvasScrollViewer?.ScrollToHome();
     }
@@ -70,7 +70,7 @@ public partial class MainWindow
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "CorelTram Files (*.ctm)|*.ctm|XAML Files (*.xaml)|*.xaml|All Files (*.*)|*.*"
+            Filter = "VectorTram Files (*.vtm)|*.vtm|VectorTram (antiguo) (*.ctm)|*.ctm|XAML Files (*.xaml)|*.xaml|All Files (*.*)|*.*"
         };
         if (dialog.ShowDialog() == true)
         {
@@ -83,7 +83,7 @@ public partial class MainWindow
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Filter = "CorelTram Files (*.ctm)|*.ctm|XAML Files (*.xaml)|*.xaml"
+            Filter = "VectorTram Files (*.vtm)|*.vtm|XAML Files (*.xaml)|*.xaml"
         };
         if (dialog.ShowDialog() == true)
         {
@@ -137,7 +137,7 @@ public partial class MainWindow
                 AddToCurrentLayer(image);
                 UpdateLayersList();
 
-                SelectElement(image);
+                SelectOnly(image);
 
                 StatusText.Text = $"Imagen importada: {System.IO.Path.GetFileName(dialog.FileName)}";
             }
@@ -162,23 +162,27 @@ public partial class MainWindow
 
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
-        if (_selectedElement != null)
+        if (_selection.Count > 0)
         {
-            if (_selectedElement is FrameworkElement fe && fe.Effect != null)
-                fe.Effect = null;
-            DrawingCanvas.Children.Remove(_selectedElement);
-            foreach (var layer in _layers)
-                layer.Elements.Remove(_selectedElement);
+            var toDelete = _selection.ToList();
+            foreach (var fe in toDelete)
+            {
+                if (fe.Effect != null) fe.Effect = null;
+                DrawingCanvas.Children.Remove(fe);
+                foreach (var layer in _layers)
+                    layer.Elements.Remove(fe);
+            }
+            _selection.Clear();
             _selectedElement = null;
             UpdateLayersList();
             UpdatePropertiesPanel();
             SetSelectionChromeVisibility(Visibility.Collapsed);
-            StatusText.Text = "Objeto eliminado";
+            StatusText.Text = toDelete.Count == 1 ? "Objeto eliminado" : $"{toDelete.Count} objetos eliminados";
         }
     }
 
     private void About_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show("CorelTram - Editor de Gráficos Vectoriales\nVersión 0.3\n\nDesarrollado en C# con WPF", "Acerca de", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show("VectorTram - Editor de Gráficos Vectoriales\nVersión 0.3\n\nDesarrollado en C# con WPF", "Acerca de", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

@@ -1,12 +1,12 @@
-﻿<Window x:Class="CorelTram.MainWindow"
+<Window x:Class="VectorTram.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:po="http://schemas.microsoft.com/winfx/2006/xaml/presentation/options"
-        xmlns:local="clr-namespace:CorelTram"
+        xmlns:local="clr-namespace:VectorTram"
         mc:Ignorable="d po"
-        Title="CorelTram" Height="950" Width="1500"
+        Title="VectorTram" Height="950" Width="1500"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="Window_PreviewKeyDown"
         Background="#F4F4F6"
@@ -565,6 +565,14 @@
                               Data="M4,16 L4,20 L8,20 L19,9 L15,5 Z M13,7 L17,11"/>
                     </ToggleButton>
 
+                    <ToggleButton x:Name="PenToolBtn" Style="{StaticResource SidebarToolButtonStyle}"
+                                  ToolTip="Pluma vectorial / curvas (N)" Checked="Tool_Checked" Unchecked="Tool_Unchecked" Tag="Pen">
+                        <Path Width="16" Height="16" Stretch="Uniform"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}" StrokeThickness="1.5"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M4,20 L6,14 L14,6 C15,5 17,5 18,6 C19,7 19,9 18,10 L10,18 Z M6,14 L10,18"/>
+                    </ToggleButton>
+
                     <ToggleButton x:Name="BrushToolBtn" Style="{StaticResource SidebarToolButtonStyle}"
                                   ToolTip="Pincel (B)" Checked="Tool_Checked" Unchecked="Tool_Unchecked" Tag="Brush">
                         <Path Width="16" Height="16" Stretch="Uniform"
@@ -626,7 +634,7 @@
                           PreviewMouseWheel="CanvasScrollViewer_PreviewMouseWheel"
                           Focusable="True"
                           Background="Transparent">
-                <Grid x:Name="PasteboardGrid" Background="Transparent">
+                <Grid x:Name="PasteboardGrid" Background="Transparent" MinWidth="4000" MinHeight="4000">
                     <Border x:Name="PaperBorder"
                             Width="794" Height="1123"
                             Background="{StaticResource PaperBrush}"

@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {

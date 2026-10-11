@@ -1,7 +1,7 @@
-# CorelTram
+# VectorTram
 
 <p align="center">
-  <img src="logotipo.png" alt="CorelTram" width="160"/>
+  <img src="logotipo.png" alt="VectorTram" width="160"/>
 </p>
 
 <p align="center">
@@ -10,11 +10,11 @@
 
 ---
 
-> **CorelTram es un proyecto personal.** No es un producto comercial ni está afiliado a CorelDRAW ni a ninguna otra empresa. Nació como un proyecto de aprendizaje y como una herramienta propia para crear y editar gráficos vectoriales en Windows con una interfaz limpia y ligera.
+> **VectorTram es un proyecto personal.** No es un producto comercial ni está afiliado a CorelDRAW ni a ninguna otra empresa. Nació como un proyecto de aprendizaje y como una herramienta propia para crear y editar gráficos vectoriales en Windows con una interfaz limpia y ligera.
 
 ## Características
 
-- **Herramientas de dibujo:** rectángulo, elipse, línea, lápiz (trazado libre) y pincel.
+- **Herramientas de dibujo:** rectángulo, elipse, línea, lápiz (trazado libre), pincel y pluma vectorial (curvas Bézier).
 - **Texto** editable en el lienzo, con selección de fuente, tamaño, alineación, interlineado y espaciado.
 - **Selección y transformación** estilo CorelDRAW: 8 tiradores de redimensión, rotación y movimiento.
 - **Mesa de trabajo (pasteboard):** dibuja y coloca objetos dentro y fuera de la hoja.
@@ -23,7 +23,7 @@
 - **Color:** paleta de colores, paleta de pantalla, mezclador RGB y degradados.
 - **Estilos de trazo:** grosor, estilo de línea (sólida, guiones, puntos, guion-punto...), extremos, uniones y estilos rápidos.
 - **Documentos:** varias pestañas, tamaños de hoja predefinidos y personalizados (mm, cm, in, px, pt), orientación e importación de imágenes.
-- **Archivos:** guardar/abrir en formato `.ctm` (también XAML), deshacer/rehacer y cuadrícula con ajuste.
+- **Archivos:** guardar/abrir en formato `.vtm` (también XAML y antiguos `.ctm`), deshacer/rehacer y cuadrícula con ajuste.
 
 ## Tecnologías
 
@@ -38,14 +38,14 @@
 
 ## Compilar y ejecutar
 
-Desde esta carpeta (`CorelTram.csproj`):
+Desde esta carpeta (`VectorTram.csproj`):
 
 ```bash
 dotnet build
 dotnet run
 ```
 
-O abre `CorelTram.csproj` en Visual Studio y pulsa **F5**.
+O abre `VectorTram.csproj` en Visual Studio y pulsa **F5**.
 
 ## Atajos de teclado
 
@@ -57,21 +57,23 @@ O abre `CorelTram.csproj` en Visual Studio y pulsa **F5**.
 | `L` | Línea | `Ctrl + I` | Importar imagen |
 | `T` | Texto | `Ctrl + Z` / `Ctrl + Y` | Deshacer / Rehacer |
 | `P` | Lápiz | `Del` | Eliminar |
-| `B` | Pincel | `Ctrl + +` / `Ctrl + -` | Acercar / Alejar |
-| `H` | Mano | `Ctrl + 0` | Ajustar a ventana |
-| `Z` | Lupa | `Ctrl + W` | Cerrar pestaña |
+| `N` | Pluma | `Ctrl + +` / `Ctrl + -` | Acercar / Alejar |
+| `B` | Pincel | `Ctrl + 0` | Ajustar a ventana |
+| `H` | Mano | `Ctrl + W` | Cerrar pestaña |
+| `Z` | Lupa | — | — |
 
 ## Estructura del proyecto
 
 ```
 ├── logotipo.png
-├── CorelTram.csproj
+├── VectorTram.csproj
 ├── App.xaml(.cs)          # Arranque y ventana de bienvenida
 ├── StartWindow.xaml(.cs)  # Pantalla de inicio / nuevo proyecto
 ├── MainWindow.xaml(.cs)   # Ventana principal e interfaz
 ├── Partials/              # Lógica dividida por áreas:
 │   ├── MainWindow.Canvas.cs
 │   ├── MainWindow.Shapes.cs
+│   ├── MainWindow.Pen.cs
 │   ├── MainWindow.Selection.cs
 │   ├── MainWindow.Tools.cs
 │   ├── MainWindow.Zoom.cs

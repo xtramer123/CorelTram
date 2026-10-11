@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public class LayerInfo : INotifyPropertyChanged
 {

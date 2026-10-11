@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>VectorTram</AssemblyName>
+    <RootNamespace>VectorTram</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

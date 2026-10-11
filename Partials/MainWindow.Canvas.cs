@@ -5,7 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -15,32 +15,57 @@ public partial class MainWindow
         _startPoint = e.GetPosition(DrawingCanvas);
         _lastPoint = _startPoint;
 
+        // Middle mouse button always pans, whatever the active tool is.
+        if (e.ChangedButton == MouseButton.Middle)
+        {
+            StartPan();
+            DrawingCanvas.CaptureMouse();
+            e.Handled = true;
+            return;
+        }
+
         if (_currentTool == ToolMode.Select)
         {
             var hit = VisualTreeHelper.HitTest(DrawingCanvas, _startPoint);
             if (IsWithinThumb(hit?.VisualHit))
                 return;
-            if (hit?.VisualHit is FrameworkElement element && element != DrawingCanvas)
+
+            var target = FindCanvasChild(hit?.VisualHit);
+
+            // Clicking inside the text box currently being edited -> let it place the caret.
+            if (_editingTextBox != null && hit != null && IsDescendantOf(hit.VisualHit, _editingTextBox))
+                return;
+
+            if (target != null)
             {
-                SelectElement(element);
-                _isDragging = true;
-                var left = Canvas.GetLeft(element);
-                var top = Canvas.GetTop(element);
-                _dragOffset = _startPoint - new Point(double.IsNaN(left) ? 0 : left, double.IsNaN(top) ? 0 : top);
-                DrawingCanvas.CaptureMouse();
+                if (_editingTextBox != null) ExitTextEdit();
+
+                bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+                if (ctrl) ToggleSelection(target);
+                else if (!IsSelected(target)) SelectOnly(target);
+
+                if (IsSelected(target))
+                {
+                    BeginDrag(_startPoint);
+                    DrawingCanvas.CaptureMouse();
+                }
                 e.Handled = true;
             }
             else
             {
-                DeselectElement();
+                if (_editingTextBox != null) ExitTextEdit();
+                ClearSelection();
+                _isSelecting = true;
+                _selectStart = _startPoint;
+                DrawingCanvas.CaptureMouse();
+                e.Handled = true;
             }
         }
         else if (_currentTool == ToolMode.Pan)
         {
-            _isPanning = true;
-            _panStartPoint = e.GetPosition(CanvasScrollViewer);
-            CanvasScrollViewer.CaptureMouse();
-            CanvasScrollViewer.Cursor = Cursors.Hand;
+            StartPan();
+            DrawingCanvas.CaptureMouse();
+            e.Handled = true;
         }
         else if (_currentTool == ToolMode.Zoom)
         {
@@ -52,6 +77,11 @@ public partial class MainWindow
             _isZoomDragging = true;
             _zoomStartPoint = _startPoint;
             DrawingCanvas.CaptureMouse();
+            e.Handled = true;
+        }
+        else if (_currentTool == ToolMode.Pen)
+        {
+            HandlePenMouseDown(_startPoint, e);
             e.Handled = true;
         }
         else
@@ -71,29 +101,48 @@ public partial class MainWindow
         {
             UpdateShape(_currentShape, _startPoint, currentPos);
         }
-        else if (_isDragging && _selectedElement != null)
+        else if (_isDragging && _selection.Count > 0)
         {
-            var newPos = currentPos - _dragOffset;
-            Canvas.SetLeft(_selectedElement, newPos.X);
-            Canvas.SetTop(_selectedElement, newPos.Y);
+            var delta = currentPos - _dragStart;
+            foreach (var kv in _dragOrigins)
+            {
+                Canvas.SetLeft(kv.Key, kv.Value.X + delta.X);
+                Canvas.SetTop(kv.Key, kv.Value.Y + delta.Y);
+            }
             UpdatePropertiesPanel();
             UpdateSelectionChrome();
         }
         else if (_isPanning)
         {
             var current = e.GetPosition(CanvasScrollViewer);
-            var offset = _panStartPoint - current;
-            CanvasScrollViewer.ScrollToHorizontalOffset(CanvasScrollViewer.HorizontalOffset + offset.X);
-            CanvasScrollViewer.ScrollToVerticalOffset(CanvasScrollViewer.VerticalOffset + offset.Y);
+            var delta = _panStartPoint - current;
+            _panStartPoint = current;
+            CanvasScrollViewer.ScrollToHorizontalOffset(CanvasScrollViewer.HorizontalOffset + delta.X);
+            CanvasScrollViewer.ScrollToVerticalOffset(CanvasScrollViewer.VerticalOffset + delta.Y);
         }
         else if (_isZoomDragging)
         {
             UpdateMarquee(_zoomStartPoint, currentPos);
         }
+        else if (_isSelecting)
+        {
+            UpdateSelectionMarquee(_selectStart, currentPos);
+        }
+        else if (_currentTool == ToolMode.Pen && _penBuilding)
+        {
+            UpdatePenPreview(currentPos, e.LeftButton == MouseButtonState.Pressed);
+        }
     }
 
     private void DrawingCanvas_MouseUp(object sender, MouseButtonEventArgs e)
     {
+        if (_currentTool == ToolMode.Pen && _penDraggingHandle)
+        {
+            _penDraggingHandle = false;
+            DrawingCanvas.ReleaseMouseCapture();
+            return;
+        }
+
         if (_isDrawing)
         {
             _isDrawing = false;
@@ -107,12 +156,13 @@ public partial class MainWindow
         else if (_isDragging)
         {
             _isDragging = false;
+            _dragOrigins.Clear();
             DrawingCanvas.ReleaseMouseCapture();
         }
         else if (_isPanning)
         {
             _isPanning = false;
-            CanvasScrollViewer.ReleaseMouseCapture();
+            DrawingCanvas.ReleaseMouseCapture();
             CanvasScrollViewer.Cursor = Cursors.Arrow;
         }
         else if (_isZoomDragging)
@@ -130,11 +180,20 @@ public partial class MainWindow
                 ZoomToRect(rect);
             }
         }
+        else if (_isSelecting)
+        {
+            _isSelecting = false;
+            DrawingCanvas.ReleaseMouseCapture();
+            var rect = RemoveSelectionMarquee();
+            if (rect.Width >= 3 || rect.Height >= 3)
+                SelectInRect(rect);
+        }
     }
 
     private void DrawingCanvas_MouseLeave(object sender, MouseEventArgs e)
     {
-        if (_isDrawing || _isDragging || _isPanning || _isZoomDragging)
+        if (DrawingCanvas.IsMouseCaptured) return;
+        if (_isDrawing || _isDragging || _isPanning || _isZoomDragging || _isSelecting)
         {
             DrawingCanvas_MouseUp(sender, new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left));
         }
@@ -143,6 +202,68 @@ public partial class MainWindow
     private void CanvasScrollViewer_MouseMove(object sender, MouseEventArgs e)
     {
         DrawingCanvas_MouseMove(sender, e);
+    }
+
+    private void StartPan()
+    {
+        _isPanning = true;
+        _panStartPoint = Mouse.GetPosition(CanvasScrollViewer);
+        CanvasScrollViewer.Cursor = Cursors.Hand;
+    }
+
+    private FrameworkElement? FindCanvasChild(DependencyObject? obj)
+    {
+        DependencyObject? child = null;
+        while (obj != null && obj != DrawingCanvas)
+        {
+            child = obj;
+            obj = VisualTreeHelper.GetParent(obj);
+        }
+        return obj == DrawingCanvas ? child as FrameworkElement : null;
+    }
+
+    private static bool IsDescendantOf(DependencyObject? obj, DependencyObject ancestor)
+    {
+        while (obj != null && obj != ancestor)
+            obj = VisualTreeHelper.GetParent(obj);
+        return obj == ancestor;
+    }
+
+    // ========== SELECTION MARQUEE ==========
+    private void UpdateSelectionMarquee(Point start, Point current)
+    {
+        if (_selectMarqueeRect == null)
+        {
+            _selectMarqueeRect = new Rectangle
+            {
+                Stroke = (Brush)FindResource("AccentBrush"),
+                StrokeThickness = 1.0 / _zoom,
+                StrokeDashArray = new DoubleCollection { 3, 2 },
+                Fill = new SolidColorBrush(Color.FromArgb(28, 0xFF, 0x8C, 0x00)),
+                IsHitTestVisible = false
+            };
+            Panel.SetZIndex(_selectMarqueeRect, 1000001);
+            SelectionLayer.Children.Add(_selectMarqueeRect);
+        }
+
+        var r = new Rect(start, current);
+        Canvas.SetLeft(_selectMarqueeRect, r.Left);
+        Canvas.SetTop(_selectMarqueeRect, r.Top);
+        _selectMarqueeRect.Width = r.Width;
+        _selectMarqueeRect.Height = r.Height;
+    }
+
+    private Rect RemoveSelectionMarquee()
+    {
+        Rect r = Rect.Empty;
+        if (_selectMarqueeRect != null)
+        {
+            r = new Rect(Canvas.GetLeft(_selectMarqueeRect), Canvas.GetTop(_selectMarqueeRect),
+                _selectMarqueeRect.Width, _selectMarqueeRect.Height);
+            SelectionLayer.Children.Remove(_selectMarqueeRect);
+            _selectMarqueeRect = null;
+        }
+        return r;
     }
 
     // ========== ZOOM MARQUEE ==========

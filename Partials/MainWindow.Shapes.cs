@@ -5,7 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public partial class MainWindow
 {
@@ -21,7 +21,7 @@ public partial class MainWindow
             ToolMode.Rectangle => new Rectangle
             {
                 Stroke = strokeBrush,
-                Fill = fillBrush,
+                Fill = fillBrush ?? Brushes.Transparent,
                 StrokeThickness = thickness,
                 RadiusX = 0,
                 RadiusY = 0
@@ -29,7 +29,7 @@ public partial class MainWindow
             ToolMode.Ellipse => new Ellipse
             {
                 Stroke = strokeBrush,
-                Fill = fillBrush,
+                Fill = fillBrush ?? Brushes.Transparent,
                 StrokeThickness = thickness
             },
             ToolMode.Line => new Line
@@ -104,9 +104,14 @@ public partial class MainWindow
             textBox.TextAlignment = Enum.Parse<TextAlignment>(align);
         }
 
+        textBox.PreviewMouseLeftButtonDown += TextBox_PreviewMouseDown;
+        textBox.MouseDoubleClick += TextBox_MouseDoubleClick;
+        textBox.TextChanged += TextBox_TextChanged;
+
         Canvas.SetLeft(textBox, start.X);
         Canvas.SetTop(textBox, start.Y);
         textBox.Focus();
+        _editingTextBox = textBox;
         _currentTextBox = textBox;
         return textBox;
     }

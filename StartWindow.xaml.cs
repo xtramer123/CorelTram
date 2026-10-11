@@ -8,7 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace CorelTram;
+namespace VectorTram;
 
 public class ProjectCreatedEventArgs : EventArgs
 {
@@ -37,7 +37,7 @@ public partial class StartWindow : Window
     public StartWindow()
     {
         InitializeComponent();
-        _recentFilesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CorelTram", "recent.json");
+        _recentFilesPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VectorTram", "recent.json");
         Loaded += StartWindow_Loaded;
     }
 
@@ -251,7 +251,7 @@ public partial class StartWindow : Window
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "CorelTram Files (*.ctm)|*.ctm|XAML Files (*.xaml)|*.xaml|All Files (*.*)|*.*"
+            Filter = "VectorTram Files (*.vtm)|*.vtm|VectorTram (antiguo) (*.ctm)|*.ctm|XAML Files (*.xaml)|*.xaml|All Files (*.*)|*.*"
         };
         if (dialog.ShowDialog() == true)
         {
