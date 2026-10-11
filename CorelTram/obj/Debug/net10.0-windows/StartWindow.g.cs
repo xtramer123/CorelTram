@@ -204,7 +204,7 @@ namespace CorelTram {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/CorelTram;component/startwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/CorelTram;V1.0.0.0;component/startwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\StartWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

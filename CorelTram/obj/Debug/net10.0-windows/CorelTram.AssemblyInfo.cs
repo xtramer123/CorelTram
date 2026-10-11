@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CorelTram")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f3991454d01e0060d9df20698681fa35b9570d7b")]
 [assembly: System.Reflection.AssemblyProductAttribute("CorelTram")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CorelTram")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

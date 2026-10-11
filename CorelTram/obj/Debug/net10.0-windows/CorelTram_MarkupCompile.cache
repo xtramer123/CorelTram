@@ -1,5 +1,5 @@
 ﻿CorelTram
-
+1.0.0.0
 
 winexe
 C#
@@ -12,9 +12,9 @@ TRACE;DEBUG;NET;NET10_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_O
 C:\Users\ISAAC\Downloads\CorelTram\CorelTram\App.xaml
 2-1149895725
 1-1742960067
-17265574561
+19-798065630
 206890450207
 MainWindow.xaml;StartWindow.xaml;
 
-False
+True
 
