@@ -87,4 +87,4 @@ O abre `CorelTram.csproj` en Visual Studio y pulsa **F5**.
 
 ## Licencia
 
-Este es un proyecto personal y de código abierto. Puedes usarlo, estudiarlo y modificarlo libremente.
+Este es un proyecto personal y de código abierto, distribuido bajo la licencia **MIT**. Puedes usarlo, estudiarlo y modificarlo libremente. Consulta el archivo [`LICENSE`](LICENSE) para más detalles.
