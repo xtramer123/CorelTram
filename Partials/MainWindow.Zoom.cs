@@ -80,10 +80,15 @@ public partial class MainWindow
     private void CenterOnPage()
     {
         CanvasScrollViewer.UpdateLayout();
-        double cx = (PasteboardMargin + PaperBorder.Width / 2) * _zoom;
-        double cy = (PasteboardMargin + PaperBorder.Height / 2) * _zoom;
+        double cx = (_pageOriginX + PaperBorder.Width / 2) * _zoom;
+        double cy = (_pageOriginY + PaperBorder.Height / 2) * _zoom;
         CanvasScrollViewer.ScrollToHorizontalOffset(cx - CanvasScrollViewer.ViewportWidth / 2);
         CanvasScrollViewer.ScrollToVerticalOffset(cy - CanvasScrollViewer.ViewportHeight / 2);
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        CenterOnPage();
     }
 
     private void ToggleRulers_Click(object sender, RoutedEventArgs e)

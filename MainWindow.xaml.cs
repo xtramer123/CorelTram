@@ -96,6 +96,11 @@ public partial class MainWindow : Window
     private const double MinSize = 6.0;
     private const double PasteboardMargin = 300.0;
 
+    // Origin of the page within DrawingCanvas coordinates. Kept centered in the
+    // canvas so the free workspace is balanced on all sides.
+    private double _pageOriginX = PasteboardMargin;
+    private double _pageOriginY = PasteboardMargin;
+
     private Rectangle? _selectionRect;
     private readonly Thumb?[] _resizeThumbs = new Thumb?[8];
     private Thumb? _rotateThumb;

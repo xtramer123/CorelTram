@@ -7,8 +7,10 @@
         xmlns:local="clr-namespace:VectorTram"
         mc:Ignorable="d po"
         Title="VectorTram" Height="950" Width="1500"
+        Icon="logotipo.png"
         WindowStartupLocation="CenterScreen"
         PreviewKeyDown="Window_PreviewKeyDown"
+        Loaded="MainWindow_Loaded"
         Background="#F4F4F6"
         Foreground="#1B1B1F"
         FontFamily="Segoe UI">
@@ -1359,11 +1361,11 @@
                                 Background="{StaticResource PaperBrush}"
                                 HorizontalAlignment="Left" VerticalAlignment="Top"
                                 Effect="{StaticResource PaperShadow}"
-                                Margin="300,300,0,0"
+                                Margin="1603,1439,0,0"
                                 BorderBrush="{StaticResource BorderDark}" BorderThickness="1"/>
 
                         <Canvas x:Name="DrawingCanvas"
-                                Width="1394" Height="1723"
+                                Width="4000" Height="4000"
                                 HorizontalAlignment="Left" VerticalAlignment="Top"
                                 MouseDown="DrawingCanvas_MouseDown"
                                 MouseRightButtonUp="DrawingCanvas_MouseRightButtonUp"

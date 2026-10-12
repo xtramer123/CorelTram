@@ -161,6 +161,10 @@ public partial class MainWindow
 
         switch (e.Key)
         {
+            case Key.Delete:
+                Delete_Click(sender, e);
+                e.Handled = true;
+                break;
             case Key.F10:
                 if (ShapeToolBtn.IsChecked != true) ShapeToolBtn.IsChecked = true;
                 e.Handled = true;

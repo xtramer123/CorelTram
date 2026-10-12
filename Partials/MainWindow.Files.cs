@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -12,18 +13,29 @@ namespace VectorTram;
 public partial class MainWindow
 {
     // ========== FILE OPERATIONS ==========
+    private static (double X, double Y) ComputePageOrigin(double widthPx, double heightPx)
+    {
+        double canvasW = Math.Max(widthPx + PasteboardMargin * 2, 4000);
+        double canvasH = Math.Max(heightPx + PasteboardMargin * 2, 4000);
+        return (Math.Round((canvasW - widthPx) / 2), Math.Round((canvasH - heightPx) / 2));
+    }
+
     private void SetPaperSize(double widthPx, double heightPx)
     {
+        double canvasW = Math.Max(widthPx + PasteboardMargin * 2, 4000);
+        double canvasH = Math.Max(heightPx + PasteboardMargin * 2, 4000);
+        (_pageOriginX, _pageOriginY) = ComputePageOrigin(widthPx, heightPx);
+
         if (PaperBorder != null)
         {
             PaperBorder.Width = widthPx;
             PaperBorder.Height = heightPx;
-            PaperBorder.Margin = new Thickness(PasteboardMargin, PasteboardMargin, 0, 0);
+            PaperBorder.Margin = new Thickness(_pageOriginX, _pageOriginY, 0, 0);
         }
         if (DrawingCanvas != null)
         {
-            DrawingCanvas.Width = Math.Max(widthPx + PasteboardMargin * 2, 4000);
-            DrawingCanvas.Height = Math.Max(heightPx + PasteboardMargin * 2, 4000);
+            DrawingCanvas.Width = canvasW;
+            DrawingCanvas.Height = canvasH;
         }
         CanvasScrollViewer?.ScrollToHome();
     }
@@ -36,6 +48,28 @@ public partial class MainWindow
             var canvas = System.Windows.Markup.XamlReader.Load(stream) as Canvas;
             if (canvas != null)
             {
+                // Recover the page origin the document was saved with so objects
+                // land on the page even though the page is now centered in the
+                // workspace. Legacy files (no metadata) used PasteboardMargin.
+                double srcOriginX = PasteboardMargin;
+                double srcOriginY = PasteboardMargin;
+                if (canvas.Tag is string tag)
+                {
+                    var parts = tag.Split(';');
+                    if (parts.Length == 5 && parts[0] == "VT2" &&
+                        double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var pw) &&
+                        double.TryParse(parts[4], NumberStyles.Any, CultureInfo.InvariantCulture, out var ph) &&
+                        double.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out var ox) &&
+                        double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out var oy))
+                    {
+                        SetPaperSize(pw, ph);
+                        srcOriginX = ox;
+                        srcOriginY = oy;
+                    }
+                }
+                double dx = _pageOriginX - srcOriginX;
+                double dy = _pageOriginY - srcOriginY;
+
                 foreach (UIElement existing in DrawingCanvas.Children.Cast<UIElement>().ToList())
                 {
                     if (existing == SelectionLayer) continue;
@@ -50,6 +84,13 @@ public partial class MainWindow
                 }
                 foreach (var child in children)
                 {
+                    if (Math.Abs(dx) > 0.01 || Math.Abs(dy) > 0.01)
+                    {
+                        double l = Canvas.GetLeft(child); if (double.IsNaN(l)) l = 0;
+                        double t = Canvas.GetTop(child); if (double.IsNaN(t)) t = 0;
+                        Canvas.SetLeft(child, l + dx);
+                        Canvas.SetTop(child, t + dy);
+                    }
                     DrawingCanvas.Children.Add(child);
                 }
             }
@@ -98,6 +139,8 @@ public partial class MainWindow
     {
         try
         {
+            DrawingCanvas.Tag = string.Format(CultureInfo.InvariantCulture, "VT2;{0};{1};{2};{3}",
+                _pageOriginX, _pageOriginY, PaperBorder.Width, PaperBorder.Height);
             using var stream = File.Create(filename);
             System.Windows.Markup.XamlWriter.Save(DrawingCanvas, stream);
         }

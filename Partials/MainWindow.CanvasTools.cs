@@ -101,14 +101,15 @@ public partial class MainWindow
     // ========== CROP TOOL ==========
     private void CropPageTo(Rect rect)
     {
+        var (originX, originY) = ComputePageOrigin(rect.Width, rect.Height);
         foreach (var child in DrawingCanvas.Children)
         {
             if (child == SelectionLayer) continue;
             if (child is not FrameworkElement fe) continue;
             double l = Canvas.GetLeft(fe); if (double.IsNaN(l)) l = 0;
             double t = Canvas.GetTop(fe); if (double.IsNaN(t)) t = 0;
-            Canvas.SetLeft(fe, l - rect.Left + PasteboardMargin);
-            Canvas.SetTop(fe, t - rect.Top + PasteboardMargin);
+            Canvas.SetLeft(fe, l - rect.Left + originX);
+            Canvas.SetTop(fe, t - rect.Top + originY);
         }
 
         ClearSelection();

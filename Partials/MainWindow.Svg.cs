@@ -89,8 +89,8 @@ public partial class MainWindow
         double paperW = PaperBorder.Width;
         double paperH = PaperBorder.Height;
         double fit = Math.Min(1.0, Math.Min((paperW - 40) / result.Width, (paperH - 40) / result.Height));
-        double offX = PasteboardMargin + (paperW - result.Width * fit) / 2.0;
-        double offY = PasteboardMargin + (paperH - result.Height * fit) / 2.0;
+        double offX = _pageOriginX + (paperW - result.Width * fit) / 2.0;
+        double offY = _pageOriginY + (paperH - result.Height * fit) / 2.0;
 
         var transform = new TransformGroup();
         transform.Children.Add(new ScaleTransform(fit, fit));

@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:VectorTram"
         mc:Ignorable="d"
         Title="VectorTram - Bienvenido" Height="650" Width="1000"
+        Icon="logotipo.png"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5"
         Foreground="#1E1E1E"
