@@ -132,6 +132,16 @@ public partial class MainWindow
             return new Rect(left + pMinX, top + pMinY, pMaxX - pMinX, pMaxY - pMinY);
         }
 
+        if (fe is System.Windows.Shapes.Polygon pg)
+        {
+            if (pg.Points.Count == 0) return Rect.Empty;
+            double pMinX = pg.Points.Min(p => p.X);
+            double pMaxX = pg.Points.Max(p => p.X);
+            double pMinY = pg.Points.Min(p => p.Y);
+            double pMaxY = pg.Points.Max(p => p.Y);
+            return new Rect(left + pMinX, top + pMinY, pMaxX - pMinX, pMaxY - pMinY);
+        }
+
         double w = (!double.IsNaN(fe.Width) && fe.Width > 0) ? fe.Width : fe.ActualWidth;
         double h = (!double.IsNaN(fe.Height) && fe.Height > 0) ? fe.Height : fe.ActualHeight;
         if (w <= 0) w = Math.Max(fe.ActualWidth, 1);

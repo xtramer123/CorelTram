@@ -810,7 +810,8 @@
                 <MenuItem Header="Exportar para Office..."/>
                 <MenuItem Header="Publicar en PDF..."/>
                 <Separator/>
-                <MenuItem Header="Imprimir..." InputGestureText="Ctrl+P"/>
+                <MenuItem Header="Imprimir..." InputGestureText="Ctrl+P" Click="Print_Click"/>
+                <MenuItem Header="Vista previa de impresión..." Click="PrintPreview_Click"/>
                 <Separator/>
                 <MenuItem Header="Salir" Click="Exit_Click"/>
             </MenuItem>
@@ -971,7 +972,7 @@
                         <Path Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeLineJoin="Round"
                               Data="M3,3 H14 L17,6 V17 H3 Z M6,3 H12 V8 H6 Z M6,17 V12 H14 V17"/>
                     </Button>
-                    <Button Style="{StaticResource ToolbarButtonStyle}" ToolTip="Imprimir (Ctrl+P)">
+                    <Button Style="{StaticResource ToolbarButtonStyle}" ToolTip="Imprimir (Ctrl+P)" Click="Print_Click">
                         <Path Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.4" StrokeLineJoin="Round"
                               Data="M5,8 V3 H15 V8 M3,8 H17 V15 H13 V18 H7 V15 H3 Z M5,11 H11"/>
                     </Button>
@@ -1047,14 +1048,15 @@
                 Padding="6,4">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Tamaño de papel:" Style="{StaticResource PropLabelStyle}"/>
-                <ComboBox Style="{StaticResource PropComboStyle}" MinWidth="110" SelectedIndex="0">
-                    <ComboBoxItem Content="A4 (210 × 297 mm)"/>
-                    <ComboBoxItem Content="A3 (297 × 420 mm)"/>
-                    <ComboBoxItem Content="A5 (148 × 210 mm)"/>
-                    <ComboBoxItem Content="Carta (8,5 × 11 pulg.)"/>
-                    <ComboBoxItem Content="Oficio (8,5 × 14 pulg.)"/>
-                    <ComboBoxItem Content="Legal (8,5 × 14 pulg.)"/>
-                    <ComboBoxItem Content="Personalizado"/>
+                <ComboBox x:Name="PaperSizeCombo" Style="{StaticResource PropComboStyle}" MinWidth="110" SelectedIndex="0"
+                          SelectionChanged="PaperSizeCombo_SelectionChanged">
+                    <ComboBoxItem Content="A4 (210 × 297 mm)" Tag="A4"/>
+                    <ComboBoxItem Content="A3 (297 × 420 mm)" Tag="A3"/>
+                    <ComboBoxItem Content="A5 (148 × 210 mm)" Tag="A5"/>
+                    <ComboBoxItem Content="Carta (8,5 × 11 pulg.)" Tag="Letter"/>
+                    <ComboBoxItem Content="Oficio (8,5 × 14 pulg.)" Tag="Oficio"/>
+                    <ComboBoxItem Content="Legal (8,5 × 14 pulg.)" Tag="Legal"/>
+                    <ComboBoxItem Content="Personalizado" Tag="Custom"/>
                 </ComboBox>
                 <Button x:Name="PortraitPageBtn" Style="{StaticResource GridButtonStyle}" ToolTip="Orientación vertical" Margin="4,0,0,0" Click="PortraitPage_Click">
                     <Path Width="14" Height="14" Stretch="Uniform" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
