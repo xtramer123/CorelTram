@@ -10,13 +10,13 @@
 
 ---
 
-> **VectorTram es un proyecto personal.** No es un producto comercial ni está afiliado a CorelDRAW ni a ninguna otra empresa. Nació como un proyecto de aprendizaje y como una herramienta propia para crear y editar gráficos vectoriales en Windows con una interfaz limpia y ligera.
+> **VectorTram es un proyecto personal.** No es un producto comercial ni está afiliado a ninguna otra empresa. Nació como un proyecto de aprendizaje y como una herramienta propia para crear y editar gráficos vectoriales en Windows con una interfaz limpia y ligera.
 
 ## Características
 
 - **Herramientas de dibujo:** rectángulo, elipse, línea, lápiz (trazado libre), pincel y pluma vectorial (curvas Bézier).
 - **Texto** editable en el lienzo, con selección de fuente, tamaño, alineación, interlineado y espaciado.
-- **Selección y transformación** estilo CorelDRAW: 8 tiradores de redimensión, rotación y movimiento.
+- **Selección y transformación:** 8 tiradores de redimensión, rotación y movimiento.
 - **Mesa de trabajo (pasteboard):** dibuja y coloca objetos dentro y fuera de la hoja.
 - **Zoom y navegación:** acercar/alejar con la rueda o el cursor, herramienta lupa con marquesina, "ajustar a ventana" y herramienta mano.
 - **Capas**: crear, listar y mostrar/ocultar.

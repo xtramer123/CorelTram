@@ -1,9 +1,13 @@
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Markup;
+using System.Windows.Media;
 
 namespace VectorTram;
 
@@ -63,6 +67,81 @@ public partial class MainWindow
     {
         if (!IsLoaded) return;
         // Layer selection logic
+    }
+
+    // ========== RENAME LAYER ==========
+    private void LayersList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (!IsLoaded) return;
+        // Ignore double-clicks on the visibility checkbox / lock toggle.
+        if (e.OriginalSource is DependencyObject d && FindLayerAncestor<ButtonBase>(d) != null) return;
+        if (LayersList.SelectedItem is LayerInfo layer && !layer.IsEditing)
+            BeginLayerRename(layer);
+    }
+
+    private static T? FindLayerAncestor<T>(DependencyObject? obj) where T : DependencyObject
+    {
+        while (obj != null && obj is not T)
+            obj = VisualTreeHelper.GetParent(obj);
+        return obj as T;
+    }
+
+    private void BeginLayerRename(LayerInfo layer)
+    {
+        layer.EditName = layer.Name;
+        layer.IsEditing = true;
+        Dispatcher.BeginInvoke(new Action(() => FocusLayerEditBox(layer)),
+            System.Windows.Threading.DispatcherPriority.Input);
+    }
+
+    private void FocusLayerEditBox(LayerInfo layer)
+    {
+        if (LayersList.ItemContainerGenerator.ContainerFromItem(layer) is not ListBoxItem container) return;
+        var tb = FindVisualChildren<TextBox>(container).FirstOrDefault();
+        if (tb != null)
+        {
+            tb.Focus();
+            tb.SelectAll();
+        }
+    }
+
+    private void LayerNameEdit_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.DataContext is LayerInfo l && l.IsEditing)
+        {
+            tb.Focus();
+            tb.SelectAll();
+        }
+    }
+
+    private void LayerNameEdit_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (sender is not TextBox tb || tb.DataContext is not LayerInfo layer) return;
+        if (e.Key == Key.Enter)
+        {
+            CommitLayerRename(layer);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            layer.IsEditing = false;
+            e.Handled = true;
+        }
+    }
+
+    private void LayerNameEdit_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (sender is TextBox tb && tb.DataContext is LayerInfo layer && layer.IsEditing)
+            CommitLayerRename(layer);
+    }
+
+    private void CommitLayerRename(LayerInfo layer)
+    {
+        if (!layer.IsEditing) return;
+        var name = (layer.EditName ?? string.Empty).Trim();
+        if (name.Length > 0) layer.Name = name;
+        layer.IsEditing = false;
+        StatusText.Text = $"Capa renombrada: \"{layer.Name}\"";
     }
 
     private void AddLayer_Click(object sender, RoutedEventArgs e)

@@ -150,6 +150,27 @@ public partial class MainWindow
         }
     }
 
+    private void PortraitPage_Click(object sender, RoutedEventArgs e) => SetPageOrientation(false);
+
+    private void LandscapePage_Click(object sender, RoutedEventArgs e) => SetPageOrientation(true);
+
+    // Swaps the page orientation. The page keeps its size, only its width and
+    // height are exchanged, and the content is left untouched (like CorelDRAW).
+    private void SetPageOrientation(bool landscape)
+    {
+        double w = PaperBorder.Width;
+        double h = PaperBorder.Height;
+        if (double.IsNaN(w) || double.IsNaN(h) || w <= 0 || h <= 0) return;
+
+        bool alreadyLandscape = w > h;
+        if (alreadyLandscape != landscape)
+            (w, h) = (h, w);
+
+        SetPaperSize(w, h);
+        CenterOnPage();
+        StatusText.Text = landscape ? "Orientación: horizontal" : "Orientación: vertical";
+    }
+
     private void ImportImage_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog

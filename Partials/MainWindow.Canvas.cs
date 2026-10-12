@@ -181,8 +181,19 @@ public partial class MainWindow
             DrawingCanvas.ReleaseMouseCapture();
             if (_currentShape != null)
             {
-                FinalizeShape(_currentShape);
-                _currentShape = null;
+                bool polygonTool = _currentTool is ToolMode.Polygon or ToolMode.Star;
+                if (polygonTool && (e.GetPosition(DrawingCanvas) - _startPoint).Length < 6)
+                {
+                    // A single click asks for the number of sides/points.
+                    DrawingCanvas.Children.Remove(_currentShape);
+                    _currentShape = null;
+                    PromptPolygonOptions();
+                }
+                else
+                {
+                    FinalizeShape(_currentShape);
+                    _currentShape = null;
+                }
             }
         }
         else if (_isDragging)

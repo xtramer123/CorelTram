@@ -12,6 +12,28 @@ namespace VectorTram;
 public partial class MainWindow
 {
     // ========== VECTOR PEN (BEZIER) ==========
+    private Point _penLastCursor;
+    private bool _penHasCursor;
+
+    // While the pen is being built, pressing Shift straightens the active node
+    // so an accidental curve becomes a straight segment without losing the path.
+    // If we are mid-drag (creating the handles of the node we just placed) both
+    // handles are cleared, cancelling that curve. If the mouse is up we only
+    // clear the outgoing handle so the *next* segment is straight while the
+    // curve already drawn (the incoming handle) is preserved.
+    private void StraightenActivePenNode()
+    {
+        bool midDrag = _penDraggingHandle;
+        if (_penActiveIndex >= 0 && _penActiveIndex < _penNodes.Count)
+        {
+            var n = _penNodes[_penActiveIndex];
+            n.Out = new Vector(0, 0);
+            if (midDrag)
+                n.In = new Vector(0, 0);
+        }
+        RebuildPenGeometry(midDrag || !_penHasCursor ? null : _penLastCursor);
+    }
+
     private void HandlePenMouseDown(Point p, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Right)
@@ -33,7 +55,7 @@ public partial class MainWindow
             return;
         }
 
-        if (_penNodes.Count >= 2 && (p - _penNodes[0].P).Length <= 10 / _zoom)
+        if (_penNodes.Count >= 2 && (p - _penNodes[0].P).Length <= 12 / _zoom)
         {
             _penClosed = true;
             FinishPenPath();
@@ -55,6 +77,7 @@ public partial class MainWindow
         _penActiveIndex = 0;
         _penBuilding = true;
         _penDraggingHandle = true;
+        _penHasCursor = false;
 
         _penPath = new Path
         {
@@ -78,8 +101,21 @@ public partial class MainWindow
     private void UpdatePenPreview(Point cursor, bool pressed)
     {
         if (!_penBuilding || _penNodes.Count == 0) return;
+        _penLastCursor = cursor;
+        _penHasCursor = true;
 
-        if (pressed && _penDraggingHandle && _penActiveIndex >= 0 && _penActiveIndex < _penNodes.Count)
+        bool shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        bool activeValid = _penActiveIndex >= 0 && _penActiveIndex < _penNodes.Count;
+
+        if (shift && activeValid)
+        {
+            var n = _penNodes[_penActiveIndex];
+            n.Out = new Vector(0, 0);
+            if (_penDraggingHandle)
+                n.In = new Vector(0, 0);
+        }
+
+        if (pressed && _penDraggingHandle && activeValid && !shift)
         {
             var node = _penNodes[_penActiveIndex];
             var v = cursor - node.P;
@@ -89,7 +125,17 @@ public partial class MainWindow
         }
         else
         {
-            RebuildPenGeometry(cursor);
+            RebuildPenGeometry(pressed ? null : cursor);
+        }
+
+        if (!pressed)
+        {
+            if (_penNodes.Count >= 2 && (cursor - _penNodes[0].P).Length <= 12 / _zoom)
+                StatusText.Text = "Pluma: clic para cerrar la figura";
+            else if (shift)
+                StatusText.Text = "Pluma: segmento recto (Shift)";
+            else
+                StatusText.Text = "Pluma: clic para añadir puntos, arrastra para curvar. Doble clic, Enter o clic derecho para terminar.";
         }
     }
 
@@ -140,6 +186,7 @@ public partial class MainWindow
         path.IsHitTestVisible = true;
         path.Stroke = CurrentStrokeBrush ?? path.Stroke;
         path.StrokeThickness = CurrentStrokeThickness();
+        path.Fill = _penClosed ? CurrentFillBrush : null;
         ApplyStrokeStyleTo(path);
         Canvas.SetLeft(path, minX);
         Canvas.SetTop(path, minY);
@@ -165,6 +212,7 @@ public partial class MainWindow
         _penDraggingHandle = false;
         _penActiveIndex = -1;
         _penClosed = false;
+        _penHasCursor = false;
         if (DrawingCanvas.IsMouseCaptured) DrawingCanvas.ReleaseMouseCapture();
     }
 
@@ -181,7 +229,7 @@ public partial class MainWindow
         var geo = new PathGeometry();
         if (nodes.Count == 0) return geo;
 
-        var fig = new PathFigure { StartPoint = nodes[0].P, IsClosed = closed, IsFilled = false };
+        var fig = new PathFigure { StartPoint = nodes[0].P, IsClosed = closed, IsFilled = closed };
         for (int i = 1; i < nodes.Count; i++)
             fig.Segments.Add(MakeSegment(nodes[i - 1], nodes[i]));
         if (closed && nodes.Count > 1)

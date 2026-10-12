@@ -97,10 +97,15 @@ public partial class MainWindow
 
     private TextBox CreateTextBox(Point start)
     {
+        double fontSize = ParseFontSize(FontSizeCombo.Text);
+        if (fontSize <= 0 && FontSizeCombo.SelectedItem is ComboBoxItem sizeItem)
+            fontSize = ParseFontSize(sizeItem.Content.ToString());
+        if (fontSize <= 0) fontSize = 16;
+
         var textBox = new TextBox
         {
             FontFamily = (FontFamilyCombo.SelectedItem as ComboBoxItem)?.Tag as FontFamily ?? new FontFamily("Segoe UI"),
-            FontSize = double.Parse(((ComboBoxItem)FontSizeCombo.SelectedItem).Content.ToString()!.Replace(" pt", "")),
+            FontSize = fontSize,
             Foreground = CurrentStrokeBrush ?? Brushes.Black,
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
@@ -213,7 +218,13 @@ public partial class MainWindow
             fe.Visibility = currentLayer.IsVisible ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private static void BuildRegularPolygon(System.Windows.Shapes.Polygon pg, Point start, Point end, bool star)
+    // Number of sides/points used when drawing polygons and stars. Can be
+    // changed by clicking once with the tool (like CorelDRAW).
+    private int _polygonSides = 6;
+    private int _starPoints = 5;
+    private const double PolygonCurveRatio = 0.4;
+
+    private void BuildRegularPolygon(System.Windows.Shapes.Polygon pg, Point start, Point end, bool star)
     {
         double cx = (start.X + end.X) / 2.0;
         double cy = (start.Y + end.Y) / 2.0;
@@ -225,7 +236,7 @@ public partial class MainWindow
         var pts = new List<Point>();
         if (!star)
         {
-            const int sides = 6;
+            int sides = Math.Clamp(_polygonSides, 3, 64);
             for (int i = 0; i < sides; i++)
             {
                 double a = -Math.PI / 2 + 2 * Math.PI * i / sides;
@@ -234,12 +245,12 @@ public partial class MainWindow
         }
         else
         {
-            const int points = 5;
+            int points = Math.Clamp(_starPoints, 3, 24);
             int total = points * 2;
             for (int i = 0; i < total; i++)
             {
                 double a = -Math.PI / 2 + Math.PI * i / points;
-                double r = (i % 2 == 0) ? 1.0 : 0.4;
+                double r = (i % 2 == 0) ? 1.0 : PolygonCurveRatio;
                 pts.Add(new Point(cx + rx * r * Math.Cos(a), cy + ry * r * Math.Sin(a)));
             }
         }
@@ -251,6 +262,91 @@ public partial class MainWindow
             pg.Points.Add(new Point(p.X - minX, p.Y - minY));
         Canvas.SetLeft(pg, minX);
         Canvas.SetTop(pg, minY);
+    }
+
+    // Asks for the number of sides (polygon) or points (star). Invoked when the
+    // user clicks once with the Polygon/Star tool instead of dragging.
+    private void PromptPolygonOptions()
+    {
+        bool star = _currentTool == ToolMode.Star;
+        int current = star ? _starPoints : _polygonSides;
+        int min = 3;
+        int max = star ? 24 : 64;
+
+        var win = new Window
+        {
+            Title = star ? "Puntas de la estrella" : "Número de lados",
+            Width = 280,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStyle = WindowStyle.ToolWindow,
+            ShowInTaskbar = false,
+            Background = (Brush)FindResource("BgPanel"),
+            Foreground = (Brush)FindResource("TextPrimary")
+        };
+
+        var root = new StackPanel { Margin = new Thickness(16) };
+        root.Children.Add(new TextBlock
+        {
+            Text = star ? "Número de puntas:" : "Número de lados:",
+            Foreground = (Brush)FindResource("TextSecondary"),
+            Margin = new Thickness(0, 0, 0, 8)
+        });
+
+        var combo = new ComboBox
+        {
+            Style = (Style)FindResource("PanelComboBoxStyle"),
+            Margin = new Thickness(0, 0, 0, 12),
+            SelectedIndex = Math.Clamp(current, min, max) - min
+        };
+        for (int i = min; i <= max; i++)
+            combo.Items.Add(new ComboBoxItem { Content = i.ToString() });
+        root.Children.Add(combo);
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        var ok = new Button
+        {
+            Content = "Aceptar",
+            MinWidth = 90,
+            Padding = new Thickness(10, 5, 10, 5),
+            Style = (Style)FindResource("PrimaryButtonStyle")
+        };
+        var cancel = new Button
+        {
+            Content = "Cancelar",
+            MinWidth = 90,
+            Margin = new Thickness(8, 0, 0, 0),
+            Padding = new Thickness(10, 5, 10, 5),
+            Style = (Style)FindResource("GhostButtonStyle")
+        };
+
+        ok.Click += (s, e) =>
+        {
+            if (combo.SelectedItem is ComboBoxItem item && int.TryParse(item.Content.ToString(), out var n))
+            {
+                if (star) _starPoints = Math.Clamp(n, min, max);
+                else _polygonSides = Math.Clamp(n, min, max);
+            }
+            win.DialogResult = true;
+        };
+        cancel.Click += (s, e) => { win.DialogResult = false; };
+
+        buttons.Children.Add(ok);
+        buttons.Children.Add(cancel);
+        root.Children.Add(buttons);
+        win.Content = root;
+
+        win.ShowDialog();
+        UpdateToolStatus();
+        StatusText.Text = star
+            ? $"Estrella de {_starPoints} puntas: arrastra para dibujar"
+            : $"Polígono de {_polygonSides} lados: arrastra para dibujar";
     }
 
     private static void NormalizePolyline(Polyline poly)

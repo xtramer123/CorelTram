@@ -72,6 +72,37 @@ public partial class MainWindow
         }
     }
 
+    // Allows typing a custom font size in the editable combo box.
+    private void FontSizeCombo_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ApplyCustomFontSize();
+            e.Handled = true;
+        }
+    }
+
+    private void FontSizeCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        ApplyCustomFontSize();
+    }
+
+    private void ApplyCustomFontSize()
+    {
+        if (!IsLoaded || _currentTextBox == null) return;
+        var size = ParseFontSize(FontSizeCombo.Text);
+        if (size > 0)
+            _currentTextBox.FontSize = size;
+    }
+
+    private static double ParseFontSize(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return 0;
+        var cleaned = text.Replace("pt", "", StringComparison.OrdinalIgnoreCase).Replace(" ", "").Replace(",", ".");
+        return double.TryParse(cleaned, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var s) && s > 0 ? s : 0;
+    }
+
     private void TextAlignmentCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (!IsLoaded) return;

@@ -9,12 +9,26 @@ public class LayerInfo : INotifyPropertyChanged
     private string _name = "";
     private bool _isVisible = true;
     private bool _isLocked = false;
+    private bool _isEditing = false;
+    private string _editName = "";
     private ObservableCollection<UIElement> _elements = new();
 
     public string Name
     {
         get => _name;
         set { _name = value; OnPropertyChanged(nameof(Name)); }
+    }
+
+    public bool IsEditing
+    {
+        get => _isEditing;
+        set { _isEditing = value; OnPropertyChanged(nameof(IsEditing)); }
+    }
+
+    public string EditName
+    {
+        get => _editName;
+        set { _editName = value; OnPropertyChanged(nameof(EditName)); }
     }
 
     public bool IsVisible

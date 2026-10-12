@@ -61,7 +61,12 @@ public partial class MainWindow
 
     private void UpdateToolStatus()
     {
-        ToolStatusText.Text = $"Herramienta: {_currentTool}";
+        ToolStatusText.Text = _currentTool switch
+        {
+            ToolMode.Polygon => $"Herramienta: Polígono ({_polygonSides} lados)",
+            ToolMode.Star => $"Herramienta: Estrella ({_starPoints} puntas)",
+            _ => $"Herramienta: {_currentTool}"
+        };
     }
 
     private void UpdateCursor()
@@ -129,6 +134,16 @@ public partial class MainWindow
         if (_penBuilding && (e.Key == Key.Escape || e.Key == Key.Enter))
         {
             FinishPenPath();
+            e.Handled = true;
+            return;
+        }
+
+        // Holding Shift while drawing with the pen straightens the current
+        // segment (turns an accidental curve back into a straight line).
+        if (_penBuilding && (e.Key == Key.LeftShift || e.Key == Key.RightShift))
+        {
+            StraightenActivePenNode();
+            StatusText.Text = "Pluma: segmento recto (Shift)";
             e.Handled = true;
             return;
         }

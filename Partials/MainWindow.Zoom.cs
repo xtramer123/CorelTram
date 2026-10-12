@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -47,6 +48,37 @@ public partial class MainWindow
     private void UpdateZoomUI()
     {
         ZoomText.Text = $"{(_zoom * 100):F0}%";
+
+        if (ZoomCombo != null && !_isUpdatingUI)
+        {
+            _isUpdatingUI = true;
+            var want = $"{Math.Round(_zoom * 100)}%";
+            var match = ZoomCombo.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(i => (i.Content?.ToString() ?? string.Empty) == want);
+            if (match != null) ZoomCombo.SelectedItem = match;
+            _isUpdatingUI = false;
+        }
+    }
+
+    private void ZoomCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded || _isUpdatingUI) return;
+        if (ZoomCombo.SelectedItem is not ComboBoxItem item) return;
+
+        var content = item.Content?.ToString() ?? string.Empty;
+        if (content.Contains("Ajustar", StringComparison.OrdinalIgnoreCase))
+        {
+            FitToWindow_Click(sender, e);
+            return;
+        }
+
+        if (double.TryParse(content.Replace("%", ""), out var pct) && pct > 0)
+        {
+            _zoom = Math.Clamp(pct / 100.0, 0.05, 20.0);
+            ApplyZoom();
+            UpdateZoomUI();
+            CenterOnPage();
+        }
     }
 
     private void ZoomIn_Click(object sender, RoutedEventArgs e)

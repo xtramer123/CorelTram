@@ -146,6 +146,18 @@ public partial class MainWindow
             foreach (var pt in poly.Points) list.Add(new Point(left + pt.X, top + pt.Y));
             return list;
         }
+        if (fe is System.Windows.Shapes.Polygon pg)
+        {
+            var list = new List<Point>(pg.Points.Count);
+            foreach (var pt in pg.Points) list.Add(new Point(left + pt.X, top + pt.Y));
+            return list;
+        }
+        if (fe is Line line)
+            return new List<Point> { new(left + line.X1, top + line.Y1), new(left + line.X2, top + line.Y2) };
+        if (fe is Rectangle rect)
+            return RectCorners(left, top, ElemW(rect), ElemH(rect));
+        if (fe is Ellipse ell)
+            return RectCorners(left, top, ElemW(ell), ElemH(ell));
         if (fe is Path path && path.Tag is PenData pd)
         {
             var list = new List<Point>(pd.Nodes.Count);
@@ -153,6 +165,41 @@ public partial class MainWindow
             return list;
         }
         return null;
+    }
+
+    private static double ElemW(FrameworkElement fe)
+    {
+        double w = fe.Width;
+        if (double.IsNaN(w) || w <= 0) w = fe.ActualWidth;
+        return Math.Max(w, 1);
+    }
+
+    private static double ElemH(FrameworkElement fe)
+    {
+        double h = fe.Height;
+        if (double.IsNaN(h) || h <= 0) h = fe.ActualHeight;
+        return Math.Max(h, 1);
+    }
+
+    private static List<Point> RectCorners(double left, double top, double w, double h) => new()
+    {
+        new Point(left, top),
+        new Point(left + w, top),
+        new Point(left + w, top + h),
+        new Point(left, top + h)
+    };
+
+    private void RepositionNodeHandles()
+    {
+        if (_nodeTarget == null) return;
+        var pts = GetNodePoints(_nodeTarget);
+        if (pts == null) return;
+        double size = HandleSize / _zoom;
+        for (int i = 0; i < _nodeHandles.Count && i < pts.Count; i++)
+        {
+            Canvas.SetLeft(_nodeHandles[i], pts[i].X - size / 2);
+            Canvas.SetTop(_nodeHandles[i], pts[i].Y - size / 2);
+        }
     }
 
     private void UpdateNodeHandles()
@@ -201,24 +248,71 @@ public partial class MainWindow
         var pos = Mouse.GetPosition(DrawingCanvas);
         double left = Canvas.GetLeft(_nodeTarget); if (double.IsNaN(left)) left = 0;
         double top = Canvas.GetTop(_nodeTarget); if (double.IsNaN(top)) top = 0;
+        bool relayoutCorners = false;
 
         if (_nodeTarget is Polyline poly && idx >= 0 && idx < poly.Points.Count)
         {
             poly.Points[idx] = new Point(pos.X - left, pos.Y - top);
+        }
+        else if (_nodeTarget is System.Windows.Shapes.Polygon pg && idx >= 0 && idx < pg.Points.Count)
+        {
+            pg.Points[idx] = new Point(pos.X - left, pos.Y - top);
+        }
+        else if (_nodeTarget is Line line && (idx == 0 || idx == 1))
+        {
+            if (idx == 0) { line.X1 = pos.X - left; line.Y1 = pos.Y - top; }
+            else { line.X2 = pos.X - left; line.Y2 = pos.Y - top; }
+        }
+        else if (_nodeTarget is Rectangle || _nodeTarget is Ellipse)
+        {
+            ResizeFromCorner(_nodeTarget, idx, pos);
+            relayoutCorners = true;
         }
         else if (_nodeTarget is Path path && path.Tag is PenData pd && idx >= 0 && idx < pd.Nodes.Count)
         {
             pd.Nodes[idx].P = new Point(pos.X - left, pos.Y - top);
             path.Data = BuildGeometry(pd.Nodes, pd.Closed);
         }
+        else
+        {
+            return;
+        }
 
-        double size = HandleSize / _zoom;
-        Canvas.SetLeft(t, pos.X - size / 2);
-        Canvas.SetTop(t, pos.Y - size / 2);
+        if (relayoutCorners)
+        {
+            RepositionNodeHandles();
+        }
+        else
+        {
+            double size = HandleSize / _zoom;
+            Canvas.SetLeft(t, pos.X - size / 2);
+            Canvas.SetTop(t, pos.Y - size / 2);
+        }
 
         _isUpdatingUI = true;
         UpdatePropertiesPanel();
         _isUpdatingUI = false;
+        UpdateSelectionChrome();
+    }
+
+    private static void ResizeFromCorner(FrameworkElement fe, int idx, Point pos)
+    {
+        if (idx < 0 || idx > 3) return;
+        double left = Canvas.GetLeft(fe); if (double.IsNaN(left)) left = 0;
+        double top = Canvas.GetTop(fe); if (double.IsNaN(top)) top = 0;
+
+        var corners = RectCorners(left, top, ElemW(fe), ElemH(fe));
+        var anchor = corners[(idx + 2) % 4];
+
+        double nx = Math.Min(anchor.X, pos.X);
+        double ny = Math.Min(anchor.Y, pos.Y);
+        double nw = Math.Max(Math.Abs(pos.X - anchor.X), 1);
+        double nh = Math.Max(Math.Abs(pos.Y - anchor.Y), 1);
+
+        Canvas.SetLeft(fe, nx);
+        Canvas.SetTop(fe, ny);
+        fe.Width = nw;
+        fe.Height = nh;
     }
 
     // ========== RIGHT-CLICK CONTEXT MENU (move to layer) ==========

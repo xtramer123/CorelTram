@@ -12,10 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="logotipo.png"/>
-    <Content Include="logotipo.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="logotipo.png" />
+    <Resource Include="app.ico" />
   </ItemGroup>
 
 </Project>

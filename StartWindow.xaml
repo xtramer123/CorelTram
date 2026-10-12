@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:VectorTram"
         mc:Ignorable="d"
         Title="VectorTram - Bienvenido" Height="650" Width="1000"
-        Icon="logotipo.png"
+        Icon="pack://application:,,,/logotipo.png"
         WindowStartupLocation="CenterScreen"
         Background="#F5F5F5"
         Foreground="#1E1E1E"
@@ -158,7 +158,7 @@
             <StackPanel>
                 <!-- Logo & Brand -->
                 <StackPanel Orientation="Horizontal" Margin="32,40,32,0" VerticalAlignment="Center">
-                    <Image Source="logotipo.png" Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <Image Source="pack://application:,,,/logotipo.png" Width="40" Height="40" RenderOptions.BitmapScalingMode="HighQuality"/>
                     <TextBlock Text="VectorTram" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" Margin="12,0,0,0"/>
                 </StackPanel>
                 <TextBlock Text="Editor de Gráficos Vectoriales" FontSize="12" Foreground="{StaticResource TextMuted}" Margin="32,4,32,0"/>
@@ -240,7 +240,7 @@
                 <!-- Welcome View -->
                 <ScrollViewer x:Name="WelcomeScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Grid.Row="0">
                     <StackPanel x:Name="WelcomeView" VerticalAlignment="Center" HorizontalAlignment="Center" Width="480" Margin="0,40">
-                        <Image Source="logotipo.png" Width="96" Height="96" Margin="0,0,0,24" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <Image Source="pack://application:,,,/logotipo.png" Width="96" Height="96" Margin="0,0,0,24" RenderOptions.BitmapScalingMode="HighQuality"/>
                         <TextBlock Text="Bienvenido a VectorTram" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" TextAlignment="Center" Margin="0,0,0,8"/>
                         <TextBlock Text="Tu editor de gráficos vectoriales moderno y ligero" FontSize="15" Foreground="{StaticResource TextSecondary}" TextAlignment="Center" Margin="0,0,0,40" TextWrapping="Wrap"/>
 
