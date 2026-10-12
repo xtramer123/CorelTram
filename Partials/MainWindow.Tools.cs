@@ -27,8 +27,11 @@ public partial class MainWindow
         if (_penBuilding && newTool != ToolMode.Pen)
             FinishPenPath();
 
+        _constrainEqual = false;
         _currentTool = newTool;
-        if (_currentTool != ToolMode.Select)
+        bool drawing = newTool is ToolMode.Rectangle or ToolMode.Ellipse or ToolMode.Line or ToolMode.Text
+            or ToolMode.Pencil or ToolMode.Brush or ToolMode.Pen or ToolMode.Polygon or ToolMode.Star;
+        if (drawing)
         {
             if (_editingTextBox != null) ExitTextEdit();
             ClearSelection();
@@ -36,6 +39,7 @@ public partial class MainWindow
         UpdateToolStatus();
         UpdateCursor();
         UpdateSelectionChrome();
+        UpdateNodeHandles();
     }
 
     private void Tool_Unchecked(object sender, RoutedEventArgs e)
@@ -51,6 +55,7 @@ public partial class MainWindow
             _currentTool = ToolMode.Select;
             UpdateToolStatus();
             UpdateCursor();
+            UpdateNodeHandles();
         }
     }
 
@@ -64,22 +69,28 @@ public partial class MainWindow
         DrawingCanvas.Cursor = _currentTool switch
         {
             ToolMode.Select => Cursors.Arrow,
+            ToolMode.Shape => Cursors.Arrow,
             ToolMode.Pan => Cursors.Hand,
             ToolMode.Zoom => Cursors.Cross,
             ToolMode.Pencil => Cursors.Pen,
             ToolMode.Brush => Cursors.Pen,
+            ToolMode.Fill => Cursors.Hand,
+            ToolMode.Eyedropper => Cursors.Cross,
+            ToolMode.Crop => Cursors.Cross,
             _ => Cursors.Cross
         };
     }
 
     private void PanTool_Click(object sender, RoutedEventArgs e)
     {
+        _constrainEqual = false;
         _currentTool = ToolMode.Pan;
         if (_penBuilding) FinishPenPath();
         if (_editingTextBox != null) ExitTextEdit();
         ClearSelection();
         UpdateToolStatus();
         UpdateCursor();
+        UpdateNodeHandles();
         // Uncheck all tool buttons
         foreach (var child in FindVisualChildren<ToggleButton>(this))
         {
@@ -90,12 +101,14 @@ public partial class MainWindow
 
     private void ZoomTool_Click(object sender, RoutedEventArgs e)
     {
+        _constrainEqual = false;
         _currentTool = ToolMode.Zoom;
         if (_penBuilding) FinishPenPath();
         if (_editingTextBox != null) ExitTextEdit();
         ClearSelection();
         UpdateToolStatus();
         UpdateCursor();
+        UpdateNodeHandles();
         foreach (var child in FindVisualChildren<ToggleButton>(this))
         {
             if (child.Tag?.ToString() != null && Enum.TryParse<ToolMode>(child.Tag.ToString(), out _))
@@ -133,6 +146,9 @@ public partial class MainWindow
             Key.P => PencilToolBtn,
             Key.N => PenToolBtn,
             Key.B => BrushToolBtn,
+            Key.Y => PolygonToolBtn,
+            Key.G => FillToolBtn,
+            Key.I => EyedropperToolBtn,
             _ => null
         };
 
@@ -145,6 +161,10 @@ public partial class MainWindow
 
         switch (e.Key)
         {
+            case Key.F10:
+                if (ShapeToolBtn.IsChecked != true) ShapeToolBtn.IsChecked = true;
+                e.Handled = true;
+                break;
             case Key.H:
                 PanTool_Click(sender, e);
                 e.Handled = true;

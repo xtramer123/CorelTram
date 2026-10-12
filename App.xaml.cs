@@ -22,4 +22,3 @@ public partial class App : Application
         e.Handled = true;
     }
 }
-

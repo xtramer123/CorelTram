@@ -38,6 +38,12 @@ public partial class MainWindow
 
             if (target != null)
             {
+                if (IsElementLocked(target))
+                {
+                    StatusText.Text = "Capa bloqueada";
+                    e.Handled = true;
+                    return;
+                }
                 if (_editingTextBox != null) ExitTextEdit();
 
                 bool ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
@@ -84,6 +90,28 @@ public partial class MainWindow
             HandlePenMouseDown(_startPoint, e);
             e.Handled = true;
         }
+        else if (_currentTool == ToolMode.Fill)
+        {
+            ApplyInteractiveFill(_startPoint);
+            e.Handled = true;
+        }
+        else if (_currentTool == ToolMode.Eyedropper)
+        {
+            PickColorAt(_startPoint);
+            e.Handled = true;
+        }
+        else if (_currentTool == ToolMode.Shape)
+        {
+            HandleShapeMouseDown(_startPoint);
+            e.Handled = true;
+        }
+        else if (_currentTool == ToolMode.Crop)
+        {
+            _isCropping = true;
+            _cropStart = _startPoint;
+            DrawingCanvas.CaptureMouse();
+            e.Handled = true;
+        }
         else
         {
             _isDrawing = true;
@@ -127,6 +155,10 @@ public partial class MainWindow
         else if (_isSelecting)
         {
             UpdateSelectionMarquee(_selectStart, currentPos);
+        }
+        else if (_isCropping)
+        {
+            UpdateMarquee(_cropStart, currentPos);
         }
         else if (_currentTool == ToolMode.Pen && _penBuilding)
         {
@@ -188,12 +220,20 @@ public partial class MainWindow
             if (rect.Width >= 3 || rect.Height >= 3)
                 SelectInRect(rect);
         }
+        else if (_isCropping)
+        {
+            _isCropping = false;
+            DrawingCanvas.ReleaseMouseCapture();
+            var rect = RemoveMarquee();
+            if (rect.Width >= 10 && rect.Height >= 10)
+                CropPageTo(rect);
+        }
     }
 
     private void DrawingCanvas_MouseLeave(object sender, MouseEventArgs e)
     {
         if (DrawingCanvas.IsMouseCaptured) return;
-        if (_isDrawing || _isDragging || _isPanning || _isZoomDragging || _isSelecting)
+        if (_isDrawing || _isDragging || _isPanning || _isZoomDragging || _isSelecting || _isCropping)
         {
             DrawingCanvas_MouseUp(sender, new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Left));
         }
@@ -201,7 +241,8 @@ public partial class MainWindow
 
     private void CanvasScrollViewer_MouseMove(object sender, MouseEventArgs e)
     {
-        DrawingCanvas_MouseMove(sender, e);
+        var p = e.GetPosition(DrawingCanvas);
+        CoordinateText.Text = $"X: {(int)p.X}, Y: {(int)p.Y}";
     }
 
     private void StartPan()

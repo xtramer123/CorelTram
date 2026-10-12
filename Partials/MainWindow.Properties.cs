@@ -55,6 +55,7 @@ public partial class MainWindow
         {
             fe.RenderTransformOrigin = new Point(0.5, 0.5);
             fe.RenderTransform = new RotateTransform(e.NewValue);
+            UpdateSelectionChrome();
         }
     }
 

@@ -8,6 +8,7 @@ public class LayerInfo : INotifyPropertyChanged
 {
     private string _name = "";
     private bool _isVisible = true;
+    private bool _isLocked = false;
     private ObservableCollection<UIElement> _elements = new();
 
     public string Name
@@ -20,6 +21,12 @@ public class LayerInfo : INotifyPropertyChanged
     {
         get => _isVisible;
         set { _isVisible = value; OnPropertyChanged(nameof(IsVisible)); }
+    }
+
+    public bool IsLocked
+    {
+        get => _isLocked;
+        set { _isLocked = value; OnPropertyChanged(nameof(IsLocked)); }
     }
 
     public ObservableCollection<UIElement> Elements

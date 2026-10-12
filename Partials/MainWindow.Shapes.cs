@@ -58,6 +58,20 @@ public partial class MainWindow
                 Fill = null
             },
             ToolMode.Text => CreateTextBox(start),
+            ToolMode.Polygon => new System.Windows.Shapes.Polygon
+            {
+                Stroke = strokeBrush,
+                Fill = fillBrush ?? Brushes.Transparent,
+                StrokeThickness = thickness,
+                StrokeLineJoin = PenLineJoin.Round
+            },
+            ToolMode.Star => new System.Windows.Shapes.Polygon
+            {
+                Stroke = strokeBrush,
+                Fill = fillBrush ?? Brushes.Transparent,
+                StrokeThickness = thickness,
+                StrokeLineJoin = PenLineJoin.Round
+            },
             _ => null
         };
 
@@ -120,23 +134,32 @@ public partial class MainWindow
     {
         if (element is not Shape shape) return;
 
+        if (shape is System.Windows.Shapes.Polygon polyShape &&
+            (_currentTool == ToolMode.Polygon || _currentTool == ToolMode.Star))
+        {
+            BuildRegularPolygon(polyShape, start, end, _currentTool == ToolMode.Star);
+            return;
+        }
+
         switch (shape)
         {
             case Rectangle rect:
-                var rectX = Math.Min(start.X, end.X);
-                var rectY = Math.Min(start.Y, end.Y);
-                rect.Width = Math.Max(Math.Abs(end.X - start.X), 1);
-                rect.Height = Math.Max(Math.Abs(end.Y - start.Y), 1);
-                Canvas.SetLeft(rect, rectX);
-                Canvas.SetTop(rect, rectY);
+                double rectW = Math.Max(Math.Abs(end.X - start.X), 1);
+                double rectH = Math.Max(Math.Abs(end.Y - start.Y), 1);
+                if (_constrainEqual) { double s = Math.Max(rectW, rectH); rectW = rectH = s; }
+                rect.Width = rectW;
+                rect.Height = rectH;
+                Canvas.SetLeft(rect, end.X >= start.X ? start.X : start.X - rectW);
+                Canvas.SetTop(rect, end.Y >= start.Y ? start.Y : start.Y - rectH);
                 break;
             case Ellipse ellipse:
-                var ellipseX = Math.Min(start.X, end.X);
-                var ellipseY = Math.Min(start.Y, end.Y);
-                ellipse.Width = Math.Max(Math.Abs(end.X - start.X), 1);
-                ellipse.Height = Math.Max(Math.Abs(end.Y - start.Y), 1);
-                Canvas.SetLeft(ellipse, ellipseX);
-                Canvas.SetTop(ellipse, ellipseY);
+                double ellW = Math.Max(Math.Abs(end.X - start.X), 1);
+                double ellH = Math.Max(Math.Abs(end.Y - start.Y), 1);
+                if (_constrainEqual) { double s = Math.Max(ellW, ellH); ellW = ellH = s; }
+                ellipse.Width = ellW;
+                ellipse.Height = ellH;
+                Canvas.SetLeft(ellipse, end.X >= start.X ? start.X : start.X - ellW);
+                Canvas.SetTop(ellipse, end.Y >= start.Y ? start.Y : start.Y - ellH);
                 break;
             case Line line:
                 line.X1 = start.X;
@@ -181,8 +204,53 @@ public partial class MainWindow
 
     private void AddToCurrentLayer(UIElement element)
     {
-        var currentLayer = _layers.FirstOrDefault(l => l.IsVisible) ?? _layers.FirstOrDefault();
-        currentLayer?.Elements.Add(element);
+        var currentLayer = _layers.FirstOrDefault(l => l.IsVisible && !l.IsLocked)
+            ?? _layers.FirstOrDefault(l => !l.IsLocked)
+            ?? _layers.FirstOrDefault();
+        if (currentLayer == null) return;
+        currentLayer.Elements.Add(element);
+        if (element is FrameworkElement fe)
+            fe.Visibility = currentLayer.IsVisible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private static void BuildRegularPolygon(System.Windows.Shapes.Polygon pg, Point start, Point end, bool star)
+    {
+        double cx = (start.X + end.X) / 2.0;
+        double cy = (start.Y + end.Y) / 2.0;
+        double rx = Math.Abs(end.X - start.X) / 2.0;
+        double ry = Math.Abs(end.Y - start.Y) / 2.0;
+        rx = Math.Max(rx, 1);
+        ry = Math.Max(ry, 1);
+
+        var pts = new List<Point>();
+        if (!star)
+        {
+            const int sides = 6;
+            for (int i = 0; i < sides; i++)
+            {
+                double a = -Math.PI / 2 + 2 * Math.PI * i / sides;
+                pts.Add(new Point(cx + rx * Math.Cos(a), cy + ry * Math.Sin(a)));
+            }
+        }
+        else
+        {
+            const int points = 5;
+            int total = points * 2;
+            for (int i = 0; i < total; i++)
+            {
+                double a = -Math.PI / 2 + Math.PI * i / points;
+                double r = (i % 2 == 0) ? 1.0 : 0.4;
+                pts.Add(new Point(cx + rx * r * Math.Cos(a), cy + ry * r * Math.Sin(a)));
+            }
+        }
+
+        double minX = pts.Min(p => p.X);
+        double minY = pts.Min(p => p.Y);
+        pg.Points.Clear();
+        foreach (var p in pts)
+            pg.Points.Add(new Point(p.X - minX, p.Y - minY));
+        Canvas.SetLeft(pg, minX);
+        Canvas.SetTop(pg, minY);
     }
 
     private static void NormalizePolyline(Polyline poly)

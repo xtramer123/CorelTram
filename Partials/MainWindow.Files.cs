@@ -62,8 +62,8 @@ public partial class MainWindow
 
     private void NewFile_Click(object sender, RoutedEventArgs e)
     {
-        var newWindow = new MainWindow();
-        newWindow.Show();
+        var start = new StartWindow { Owner = this };
+        start.ShowDialog();
     }
 
     private void OpenFile_Click(object sender, RoutedEventArgs e)

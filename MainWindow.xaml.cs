@@ -25,7 +25,13 @@ public partial class MainWindow : Window
         Brush,
         Pen,
         Pan,
-        Zoom
+        Zoom,
+        Shape,
+        Crop,
+        Polygon,
+        Star,
+        Fill,
+        Eyedropper
     }
 
     private ToolMode _currentTool = ToolMode.Select;
@@ -48,6 +54,10 @@ public partial class MainWindow : Window
     private bool _isZoomDragging = false;
     private Point _zoomStartPoint;
     private Rectangle? _marqueeRect;
+    private bool _isCropping = false;
+    private Point _cropStart;
+    private readonly List<Thumb> _nodeHandles = new();
+    private FrameworkElement? _nodeTarget;
     private double _zoom = 1.0;
     private readonly List<PenNode> _penNodes = new();
     private System.Windows.Shapes.Path? _penPath;

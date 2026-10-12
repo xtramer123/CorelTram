@@ -88,7 +88,11 @@ public partial class MainWindow
 
     private void ToggleRulers_Click(object sender, RoutedEventArgs e)
     {
-        StatusText.Text = "Reglas: No implementado aún";
+        bool show = !(sender is MenuItem mi) || mi.IsChecked;
+        RulerRow.Height = show ? new GridLength(20) : new GridLength(0);
+        RulerCol.Width = show ? new GridLength(20) : new GridLength(0);
+        if (HorizontalRuler != null) HorizontalRuler.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (VerticalRuler != null) VerticalRuler.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void ToggleGrid_Click(object sender, RoutedEventArgs e)

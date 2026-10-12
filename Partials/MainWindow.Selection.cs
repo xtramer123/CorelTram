@@ -14,9 +14,14 @@ namespace VectorTram;
 public partial class MainWindow
 {
     // ========== SELECTION CHROME (resize / rotate handles) ==========
+    private Canvas? _chromeGroup;
+
     private void BuildSelectionChrome()
     {
         if (SelectionLayer == null) return;
+
+        _chromeGroup = new Canvas();
+        SelectionLayer.Children.Add(_chromeGroup);
 
         _selectionRect = new Rectangle
         {
@@ -25,7 +30,7 @@ public partial class MainWindow
             Fill = null,
             IsHitTestVisible = false
         };
-        SelectionLayer.Children.Add(_selectionRect);
+        _chromeGroup.Children.Add(_selectionRect);
 
         var order = new[]
         {
@@ -36,14 +41,14 @@ public partial class MainWindow
         {
             var thumb = CreateResizeThumb(order[i]);
             _resizeThumbs[i] = thumb;
-            SelectionLayer.Children.Add(thumb);
+            _chromeGroup.Children.Add(thumb);
         }
 
         _rotateThumb = new Thumb { Tag = ResizeHandle.Rotate, Cursor = Cursors.Hand };
         _rotateThumb.Template = BuildRotateTemplate();
         _rotateThumb.DragStarted += ResizeThumb_DragStarted;
         _rotateThumb.DragDelta += ResizeThumb_DragDelta;
-        SelectionLayer.Children.Add(_rotateThumb);
+        _chromeGroup.Children.Add(_rotateThumb);
 
         SetSelectionChromeVisibility(Visibility.Collapsed);
     }
@@ -197,6 +202,16 @@ public partial class MainWindow
             _rotateThumb.Height = rs;
             Canvas.SetLeft(_rotateThumb, cx - rs / 2);
             Canvas.SetTop(_rotateThumb, b.Top - rs - 12 / _zoom);
+        }
+
+        // Rotate the whole chrome with the selected element so the frame matches it.
+        double angle = (_selection[0].RenderTransform as RotateTransform)?.Angle ?? 0;
+        if (_chromeGroup != null)
+        {
+            if (Math.Abs(angle) < 0.001)
+                _chromeGroup.RenderTransform = null;
+            else
+                _chromeGroup.RenderTransform = new RotateTransform(angle, cx, cy);
         }
     }
 
@@ -378,6 +393,7 @@ public partial class MainWindow
         ApplySelectionVisual(fe);
         UpdatePropertiesPanel();
         UpdateSelectionChrome();
+        UpdateNodeHandles();
     }
 
     private void ToggleSelection(FrameworkElement fe)
@@ -393,6 +409,7 @@ public partial class MainWindow
         _selectedElement = _selection.Count > 0 ? _selection[_selection.Count - 1] : null;
         UpdatePropertiesPanel();
         UpdateSelectionChrome();
+        UpdateNodeHandles();
     }
 
     private void ClearSelection()
@@ -403,6 +420,7 @@ public partial class MainWindow
         _selectedElement = null;
         UpdatePropertiesPanel();
         SetSelectionChromeVisibility(Visibility.Collapsed);
+        UpdateNodeHandles();
     }
 
     private void ApplySelectionVisual(FrameworkElement fe)
@@ -460,6 +478,7 @@ public partial class MainWindow
         {
             if (child is not FrameworkElement fe) continue;
             if (fe == SelectionLayer) continue;
+            if (IsElementLocked(fe)) continue;
             var b = GetElementBounds(fe);
             if (b.Width <= 0 || b.Height <= 0) continue;
             if (rect.IntersectsWith(b)) hits.Add(fe);
