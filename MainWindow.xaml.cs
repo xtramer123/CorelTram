@@ -72,6 +72,17 @@ public partial class MainWindow : Window
     private bool _isUpdatingUI = false;
     private int _tabCounter = 0;
 
+    // Commands for keyboard shortcuts
+    public static readonly RoutedCommand PrintCommand = new RoutedCommand("Print", typeof(MainWindow));
+    public static readonly RoutedCommand NewFileCommand = new RoutedCommand("NewFile", typeof(MainWindow));
+    public static readonly RoutedCommand OpenFileCommand = new RoutedCommand("OpenFile", typeof(MainWindow));
+    public static readonly RoutedCommand SaveFileCommand = new RoutedCommand("SaveFile", typeof(MainWindow));
+    public static readonly RoutedCommand UndoCommand = new RoutedCommand("Undo", typeof(MainWindow));
+    public static readonly RoutedCommand RedoCommand = new RoutedCommand("Redo", typeof(MainWindow));
+    public static readonly RoutedCommand SelectAllCommand = new RoutedCommand("SelectAll", typeof(MainWindow));
+    public static readonly RoutedCommand DuplicateCommand = new RoutedCommand("Duplicate", typeof(MainWindow));
+    public static readonly RoutedCommand DeleteCommand = new RoutedCommand("Delete", typeof(MainWindow));
+
     private enum ResizeHandle
     {
         TopLeft, Top, TopRight, Right, BottomRight, Bottom, BottomLeft, Left, Rotate
@@ -117,6 +128,18 @@ public partial class MainWindow : Window
         try
         {
             InitializeComponent();
+            
+            // Command bindings for keyboard shortcuts
+            CommandBindings.Add(new CommandBinding(PrintCommand, (s, e) => Print_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(NewFileCommand, (s, e) => NewFile_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(OpenFileCommand, (s, e) => OpenFile_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(SaveFileCommand, (s, e) => SaveFile_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(UndoCommand, (s, e) => Undo_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(RedoCommand, (s, e) => Redo_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(SelectAllCommand, (s, e) => SelectAll_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(DuplicateCommand, (s, e) => Duplicate_Click(this, new RoutedEventArgs())));
+            CommandBindings.Add(new CommandBinding(DeleteCommand, (s, e) => Delete_Click(this, new RoutedEventArgs())));
+            
             InitializeColorPalette();
             InitializeGradients();
             InitializeStrokePresets();
@@ -223,6 +246,58 @@ public partial class MainWindow : Window
     {
         var newWindow = new MainWindow();
         newWindow.Show();
+    }
+
+    private void SelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        _selection.Clear();
+        foreach (var child in DrawingCanvas.Children)
+        {
+            if (child is FrameworkElement fe && fe != SelectionLayer)
+            {
+                _selection.Add(fe);
+            }
+        }
+        _selectedElement = _selection.Count > 0 ? _selection[0] : null;
+        UpdatePropertiesPanel();
+        UpdateSelectionChrome();
+        StatusText.Text = _selection.Count > 0 ? $"{_selection.Count} objetos seleccionados" : "Nada seleccionado";
+    }
+
+    private void Duplicate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selection.Count == 0) return;
+
+        var toDuplicate = _selection.ToList();
+        _selection.Clear();
+
+        foreach (var element in toDuplicate)
+        {
+            if (element is FrameworkElement fe)
+            {
+                var xaml = System.Windows.Markup.XamlWriter.Save(fe);
+                using var stream = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes(xaml));
+                var clone = System.Windows.Markup.XamlReader.Load(stream) as FrameworkElement;
+                if (clone != null)
+                {
+                    var left = Canvas.GetLeft(fe);
+                    var top = Canvas.GetTop(fe);
+                    Canvas.SetLeft(clone, double.IsNaN(left) ? 10 : left + 10);
+                    Canvas.SetTop(clone, double.IsNaN(top) ? 10 : top + 10);
+                    _objectCounter++;
+                    clone.Name = $"{fe.Name}_copy{_objectCounter}";
+                    DrawingCanvas.Children.Add(clone);
+                    AddToCurrentLayer(clone);
+                    _selection.Add(clone);
+                }
+            }
+        }
+
+        _selectedElement = _selection.Count > 0 ? _selection[0] : null;
+        UpdateLayersList();
+        UpdatePropertiesPanel();
+        UpdateSelectionChrome();
+        StatusText.Text = $"{toDuplicate.Count} objeto(s) duplicado(s)";
     }
 
     // ========== HELPERS ==========

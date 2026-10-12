@@ -774,6 +774,18 @@
         </ResourceDictionary>
     </Window.Resources>
 
+    <Window.InputBindings>
+        <KeyBinding Key="P" Modifiers="Control" Command="{x:Static local:MainWindow.PrintCommand}"/>
+        <KeyBinding Key="N" Modifiers="Control" Command="{x:Static local:MainWindow.NewFileCommand}"/>
+        <KeyBinding Key="O" Modifiers="Control" Command="{x:Static local:MainWindow.OpenFileCommand}"/>
+        <KeyBinding Key="S" Modifiers="Control" Command="{x:Static local:MainWindow.SaveFileCommand}"/>
+        <KeyBinding Key="Z" Modifiers="Control" Command="{x:Static local:MainWindow.UndoCommand}"/>
+        <KeyBinding Key="Y" Modifiers="Control" Command="{x:Static local:MainWindow.RedoCommand}"/>
+        <KeyBinding Key="A" Modifiers="Control" Command="{x:Static local:MainWindow.SelectAllCommand}"/>
+        <KeyBinding Key="D" Modifiers="Control" Command="{x:Static local:MainWindow.DuplicateCommand}"/>
+        <KeyBinding Key="Delete" Command="{x:Static local:MainWindow.DeleteCommand}"/>
+    </Window.InputBindings>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>      <!-- Menu Bar -->
